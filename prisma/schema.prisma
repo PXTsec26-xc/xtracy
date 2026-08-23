@@ -1,0 +1,97 @@
+// XTRACY Production Database Schema (Prisma ORM for PostgreSQL)
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  passwordHash    String
+  fullName        String
+  avatarUrl       String?
+  isEmailVerified Boolean        @default(false)
+  userRole        String         @default("Everyday User")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  profile         UserProfile?
+  savedScans      SavedScan[]
+  savedBookmarks  SavedBookmark[]
+  incidentRecords IncidentRecord[]
+  vaultNotes      VaultNote[]
+}
+
+model UserProfile {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operatingSystems        String[] @default([])
+  devices                 String[] @default([])
+  browsers                String[] @default([])
+  emailProviders          String[] @default([])
+  socialMedia             String[] @default([])
+  onlineServices          String[] @default([])
+  dataMinimization        Boolean  @default(true)
+  localVaultOnly          Boolean  @default(true)
+  anonymousScans          Boolean  @default(true)
+  criticalAlerts          Boolean  @default(true)
+  weeklySecurityDigest    Boolean  @default(false)
+  womensSafetyUpdates     Boolean  @default(true)
+  primaryEmergencyNumber  String   @default("112")
+  quickExitEnabled        Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
+}
+
+model SavedScan {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputType    String   // url, text, email
+  inputSample  String
+  riskScore    Int
+  riskLevel    String   // LOW, MEDIUM, HIGH
+  warningSigns String[] @default([])
+  analyzedAt   DateTime @default(now())
+}
+
+model SavedBookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportId  String
+  title     String
+  category  String
+  severity  String
+  savedAt   DateTime @default(now())
+}
+
+model IncidentRecord {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenarioId     String
+  title          String
+  status         String   @default("IN_PROGRESS") // IN_PROGRESS, RESOLVED, RECOVERING
+  checklistJson  String   @default("{}")
+  notes          String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model VaultNote {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  category         String
+  encryptedContent String
+  iv               String
+  salt             String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

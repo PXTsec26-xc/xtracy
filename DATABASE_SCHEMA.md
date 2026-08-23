@@ -1,0 +1,81 @@
+# XTRACY Database Schema Specification (Prisma ORM)
+
+> **Initiative:** PXT sec26  
+> **Team Members:** Anshika Goswami, Harvi Patel, Dhruvi Solanki  
+
+---
+
+## 1. Relational Entity Relationship & Model Specifications
+
+XTRACY uses **Prisma ORM** with **PostgreSQL** schema modeling and an in-memory development repository fallback.
+
+### A. User Model (`User`)
+- `id` (String, Primary Key, UUID)
+- `email` (String, Unique, Indexed)
+- `passwordHash` (String, SHA-256 + Salt PBKDF2 hash)
+- `fullName` (String)
+- `avatarUrl` (String, Optional)
+- `isEmailVerified` (Boolean, Default: false)
+- `userRole` (String, Default: "Everyday User")
+- `createdAt` (DateTime, Default: now())
+- `updatedAt` (DateTime, UpdatedAt)
+
+### B. User Profile Model (`UserProfile`)
+- `id` (String, Primary Key, UUID)
+- `userId` (String, Unique, Foreign Key -> User.id, OnDelete: Cascade)
+- `operatingSystems` (String Array)
+- `devices` (String Array)
+- `browsers` (String Array)
+- `emailProviders` (String Array)
+- `socialMedia` (String Array)
+- `onlineServices` (String Array)
+- `dataMinimization` (Boolean, Default: true)
+- `localVaultOnly` (Boolean, Default: true)
+- `anonymousScans` (Boolean, Default: true)
+- `criticalAlerts` (Boolean, Default: true)
+- `weeklySecurityDigest` (Boolean, Default: false)
+- `womensSafetyUpdates` (Boolean, Default: true)
+- `primaryEmergencyNumber` (String, Default: "112")
+- `quickExitEnabled` (Boolean, Default: true)
+- `updatedAt` (DateTime, UpdatedAt)
+
+### C. Saved Scan Model (`SavedScan`)
+- `id` (String, Primary Key, UUID)
+- `userId` (String, Foreign Key -> User.id, OnDelete: Cascade)
+- `inputType` (String: "url", "text", "email")
+- `inputSample` (String)
+- `riskScore` (Integer: 0 to 100)
+- `riskLevel` (String: "LOW", "MEDIUM", "HIGH")
+- `warningSigns` (String Array)
+- `analyzedAt` (DateTime, Default: now())
+
+### D. Saved Bookmark Model (`SavedBookmark`)
+- `id` (String, Primary Key, UUID)
+- `userId` (String, Foreign Key -> User.id, OnDelete: Cascade)
+- `reportId` (String)
+- `title` (String)
+- `category` (String)
+- `severity` (String)
+- `savedAt` (DateTime, Default: now())
+
+### E. Incident Case Model (`IncidentRecord`)
+- `id` (String, Primary Key, UUID)
+- `userId` (String, Foreign Key -> User.id, OnDelete: Cascade)
+- `scenarioId` (String)
+- `title` (String)
+- `status` (String: "IN_PROGRESS", "RESOLVED", "RECOVERING")
+- `checklistJson` (String, Default: "{}")
+- `notes` (String)
+- `createdAt` (DateTime, Default: now())
+- `updatedAt` (DateTime, UpdatedAt)
+
+### F. Vault Note Model (`VaultNote`)
+- `id` (String, Primary Key, UUID)
+- `userId` (String, Foreign Key -> User.id, OnDelete: Cascade)
+- `title` (String)
+- `category` (String)
+- `encryptedContent` (String, WebCrypto AES-GCM Ciphertext)
+- `iv` (String, Initialization Vector Base64/Hex)
+- `salt` (String, PBKDF2 Salt Base64/Hex)
+- `createdAt` (DateTime, Default: now())
+- `updatedAt` (DateTime, UpdatedAt)
