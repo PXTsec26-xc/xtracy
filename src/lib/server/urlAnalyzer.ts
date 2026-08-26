@@ -5,6 +5,7 @@
 
 import { DetailedIndicatorFactor } from '@/lib/server/riskEngine';
 import { validateUrlForSSRF } from '@/lib/ssrfProtection';
+import { ClassificationResult } from '@/lib/server/inputClassifier';
 
 const TARGETED_BRANDS = [
   { name: 'PayPal', keyword: 'paypal', officialDomain: 'paypal.com' },
@@ -42,12 +43,19 @@ const SENSITIVE_KEYWORDS = [
   'confirm',
 ];
 
-export function analyzeUrlTarget(inputUrl: string): DetailedIndicatorFactor[] {
+export function analyzeUrlTarget(
+  inputUrl: string,
+  classResult?: ClassificationResult
+): DetailedIndicatorFactor[] {
   const factors: DetailedIndicatorFactor[] = [];
   let rawUrl = inputUrl.trim();
 
+  // If no scheme was provided, default to https:// ONLY for URL parsing purposes, but do NOT award HTTPS points unless explicitly verified!
+  let isExplicitHttps = classResult?.isHttpsVerified ?? false;
   if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
     rawUrl = 'https://' + rawUrl;
+  } else if (rawUrl.startsWith('https://')) {
+    isExplicitHttps = true;
   }
 
   // SSRF Protection Check
@@ -87,17 +95,17 @@ export function analyzeUrlTarget(inputUrl: string): DetailedIndicatorFactor[] {
       });
     }
 
-    // HTTPS Transport Check
-    if (parsed.protocol === 'https:') {
+    // Strict HTTPS Transport Check: ONLY award points if explicitly verified from parsed input
+    if (isExplicitHttps) {
       factors.push({
         name: 'HTTPS Encrypted Transport',
         severity: 'LOW',
         points: -10,
         source: 'Local Heuristic Engine',
-        technicalExplanation: 'Target website uses HTTPS TLS transport encryption.',
+        technicalExplanation: 'Target website scheme explicitly specifies HTTPS TLS transport encryption.',
         fraudAssociationRationale: 'HTTPS protects transit data, though phishing sites also use free SSL certificates.',
       });
-    } else {
+    } else if (classResult?.classification === 'VALID_URL' && parsed.protocol === 'http:') {
       factors.push({
         name: 'Unencrypted HTTP Transport',
         severity: 'HIGH',
@@ -105,6 +113,15 @@ export function analyzeUrlTarget(inputUrl: string): DetailedIndicatorFactor[] {
         source: 'Local Heuristic Engine',
         technicalExplanation: 'Target website transmits credentials or forms unencrypted over HTTP.',
         fraudAssociationRationale: 'Lack of HTTPS exposes sensitive data to interception and indicates sub-standard security.',
+      });
+    } else if (classResult?.classification === 'DOMAIN') {
+      factors.push({
+        name: 'Unverified Domain Transport',
+        severity: 'LOW',
+        points: 0,
+        source: 'Local Heuristic Engine',
+        technicalExplanation: 'Target submitted as raw domain string; HTTPS availability not inferred without live lookup.',
+        fraudAssociationRationale: 'Raw domain analysis evaluates hostname structure without making transport protocol assumptions.',
       });
     }
 

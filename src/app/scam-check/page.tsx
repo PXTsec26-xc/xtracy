@@ -4,22 +4,20 @@ import React, { useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { FeatureStatusBadge } from '@/components/ui/FeatureStatusBadge';
-import { ScamCheckResult, SCAM_CHECK_DISCLAIMER } from '@/lib/server/scamCheck';
+import { ScamCheckSuccessResult, SCAM_CHECK_DISCLAIMER } from '@/lib/server/scamCheck';
 import { ReportModal } from '@/components/reports/ReportModal';
 import {
   ShieldAlert,
   Search,
   HelpCircle,
-  CheckCircle2,
   AlertTriangle,
-  Info,
   FileText,
   Lock,
-  Printer,
   ChevronDown,
   ChevronUp,
   ExternalLink,
   Shield,
+  XCircle,
 } from 'lucide-react';
 
 export default function ScamCheckPage() {
@@ -27,7 +25,8 @@ export default function ScamCheckPage() {
   const [content, setContent] = useState('');
   const [privateMode, setPrivateMode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ScamCheckResult | null>(null);
+  const [result, setResult] = useState<ScamCheckSuccessResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showWhy, setShowWhy] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -36,6 +35,9 @@ export default function ScamCheckPage() {
     if (!content.trim()) return;
 
     setLoading(true);
+    setErrorMessage(null);
+    setResult(null);
+
     try {
       const res = await fetch('/api/tools/scam-check', {
         method: 'POST',
@@ -43,10 +45,13 @@ export default function ScamCheckPage() {
         body: JSON.stringify({ targetType, content, privateMode }),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && data.success && data.data?.valid) {
         setResult(data.data);
+      } else {
+        setErrorMessage(data.error?.message || 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.');
       }
     } catch (err) {
+      setErrorMessage('Communication error with Scam Check Engine. Please check your network connection.');
     } finally {
       setLoading(false);
     }
@@ -125,7 +130,7 @@ export default function ScamCheckPage() {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste suspicious SMS text (e.g. 'Urgent! Your account is suspended. Verify now: http://...'), job offer email, or payment message..."
+              placeholder="Paste suspicious URL (e.g. 'https://example.com'), domain ('example.com'), or message text ('Urgent! Your account is suspended. Verify now: http://...')..."
               rows={4}
               className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 text-white placeholder-gray-500 text-xs focus:border-amber-400 resize-none"
               required
@@ -134,7 +139,7 @@ export default function ScamCheckPage() {
 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-[11px] text-gray-400 font-mono">
-              {privateMode ? '🔒 Mode: Private Local Heuristics Only (No external lookup)' : '🌐 Mode: Hybrid Heuristic + Threat Intelligence'}
+              {privateMode ? '🔒 Mode: Private Local Heuristics Only' : '🌐 Mode: Hybrid Heuristic + Threat Intelligence'}
             </span>
 
             <button
@@ -143,20 +148,34 @@ export default function ScamCheckPage() {
               className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center gap-2"
             >
               <Search className="w-4 h-4" />
-              <span>{loading ? 'Analyzing Risk Indicators...' : 'Analyze Target'}</span>
+              <span>{loading ? 'Analyzing Input...' : 'Analyze Target'}</span>
             </button>
           </div>
         </form>
       </GlassCard>
 
+      {/* Error Output Card for INVALID_INPUT */}
+      {errorMessage && (
+        <div className="p-6 rounded-2xl bg-red-950/80 border border-red-800 flex items-start gap-3 text-red-200 text-xs animate-fadeIn">
+          <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-1">
+            <strong className="text-white text-sm font-bold">Input Validation Exception</strong>
+            <p>{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
       {/* Analysis Result Output */}
-      {result && (
+      {result && result.valid && (
         <GlassCard className="p-6 border-gray-800 flex flex-col gap-6 text-xs animate-fadeIn">
           {/* Verdict Header */}
           <div className="flex items-center justify-between border-b border-gray-800 pb-4 flex-wrap gap-4">
             <div>
-              <span className="text-[10px] text-gray-400 uppercase font-bold font-mono">Analysis Verdict</span>
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <div className="flex items-center gap-2 font-mono text-[10px] text-brand-cyan uppercase font-bold">
+                <span>Input Classification:</span>
+                <span className="px-2 py-0.5 rounded bg-darkBg-panel border border-gray-800 text-white">{result.classification}</span>
+              </div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2 mt-1">
                 <AlertTriangle className="w-5 h-5 text-amber-400" />
                 {result.verdict}
               </h3>
@@ -262,7 +281,7 @@ export default function ScamCheckPage() {
       </GlassCard>
 
       {/* Report Modal */}
-      {showReportModal && result && (
+      {showReportModal && result && result.valid && (
         <ReportModal report={result.securityReport} onClose={() => setShowReportModal(false)} />
       )}
     </div>

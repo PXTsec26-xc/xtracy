@@ -9,12 +9,19 @@ export async function POST(req: NextRequest) {
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return createApiResponse({
-        error: { code: 'INVALID_INPUT', message: 'Content parameter cannot be empty.' },
+        error: { code: 'INVALID_INPUT', message: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.' },
         status: 400,
       });
     }
 
     const result = analyzeScamContent({ targetType, content, privateMode });
+
+    if (!result.valid) {
+      return createApiResponse({
+        error: { code: 'INVALID_INPUT', message: result.message },
+        status: 400,
+      });
+    }
 
     return createApiResponse({
       data: result,
