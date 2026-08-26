@@ -24,6 +24,9 @@ import {
   FileCheck,
   Terminal,
   Info,
+  BookOpen,
+  Activity,
+  FileText,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -34,15 +37,15 @@ export const Navbar: React.FC = () => {
     { href: '/', label: 'HOME', icon: Shield },
     { href: '/about', label: 'ABOUT', icon: Info },
     { href: '/founder', label: 'FOUNDER', icon: User },
-    { href: '/evidencepulse', label: 'EVIDENCEPULSE', icon: Dna },
-    { href: '/verifier', label: 'VERIFIER', icon: FileCheck },
+    { href: '/evidence', label: 'EVIDENCE', icon: Dna },
+    { href: '/scam-check', label: 'SCAM CHECK', icon: ShieldCheck },
     { href: '/nexus', label: 'NEXUS', icon: Briefcase },
+    { href: '/assistant', label: 'AI ASSISTANT', icon: Terminal },
+    { href: '/learning', label: 'LEARNING', icon: BookOpen },
     { href: '/tools', label: 'TOOLS', icon: Wrench },
-    { href: '/test-lab', label: 'TEST LAB', icon: Terminal },
-    { href: '/global-safety', label: 'GLOBAL SAFETY', icon: Globe },
-    { href: '/intelligence', label: 'THREATWATCH', icon: Radio },
-    { href: '/accessibility', label: 'ACCESSIBILITY', icon: Eye },
-    { href: '/trust', label: 'TRUST CENTER', icon: ShieldCheck },
+    { href: '/governance', label: 'GOVERNANCE', icon: FileText },
+    { href: '/status', label: 'STATUS', icon: Activity },
+    { href: '/transparency', label: 'TRANSPARENCY', icon: Eye },
     { href: '/safe-vault', label: 'VAULT', icon: Lock },
   ];
 
