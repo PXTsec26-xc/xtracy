@@ -1,79 +1,93 @@
 /**
- * XTRACY Explainable Risk Scoring Engine
- * Evaluates indicator findings into an explainable 0-100 risk score and strict production verdicts.
+ * XTRACY Deterministic Risk Scoring & Confidence Engine
+ * Evaluates evidence factors with traceable points, score clamping (0-100), and separate analysis confidence ratings.
  */
 
 export type RiskVerdict =
-  | 'Critical Risk'
-  | 'High Risk'
-  | 'Elevated Risk'
-  | 'Suspicious'
-  | 'Low Risk Indicators'
-  | 'Insufficient Evidence';
+  | 'Low Risk Signals'
+  | 'Moderate Risk Signals'
+  | 'High Risk Signals'
+  | 'Critical Risk Signals'
+  | 'Rejected Target';
+
+export type AnalysisConfidence = 'LOW' | 'MEDIUM' | 'HIGH' | 'N/A';
 
 export interface DetailedIndicatorFactor {
+  id?: string;
   name: string;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   points: number;
-  source: 'Local Heuristic Engine' | 'External Threat Intelligence';
+  source: string;
   technicalExplanation: string;
   fraudAssociationRationale: string;
+  evidence?: string;
+  timestamp?: string;
 }
 
-export interface ExplainableRiskOutput {
-  riskScore: number; // 0 to 100
+export interface DeterministicRiskOutput {
+  riskScore: number;
   verdict: RiskVerdict;
-  verdictDescription: string;
+  analysisConfidence: AnalysisConfidence;
   factors: DetailedIndicatorFactor[];
   whyThisResult: string[];
-  disclaimer: string;
+  limitationsNotice: string;
 }
 
-export const OFFICIAL_LEGAL_DISCLAIMER =
-  'XTRACY automated analysis provides evidence-based risk indicators to assist user decision-making. It does not replace independent forensic verification, official police complaints, or administrative verification.';
-
-export function calculateExplainableRisk(
+export function calculateDeterministicRisk(
   factors: DetailedIndicatorFactor[],
-  initialScore = 10
-): ExplainableRiskOutput {
-  let score = initialScore;
+  externalIntelAvailable = false
+): DeterministicRiskOutput {
+  // Score begins only from accumulated factor points (no hardcoded default score)
+  let rawScore = 0;
 
-  for (const f of factors) {
-    score += f.points;
+  for (const factor of factors) {
+    rawScore += factor.points;
   }
 
-  const finalScore = Math.max(0, Math.min(100, score));
+  // Clamp final score between 0 and 100
+  const clampedScore = Math.max(0, Math.min(100, Math.round(rawScore)));
 
-  let verdict: RiskVerdict = 'Low Risk Indicators';
-  let verdictDescription = 'No significant high-risk scam or phishing indicators identified in submitted target.';
+  // Determine Risk Verdict Level based on deterministic score thresholds
+  let verdict: RiskVerdict = 'Low Risk Signals';
+  if (clampedScore >= 75) {
+    verdict = 'Critical Risk Signals';
+  } else if (clampedScore >= 50) {
+    verdict = 'High Risk Signals';
+  } else if (clampedScore >= 25) {
+    verdict = 'Moderate Risk Signals';
+  } else {
+    verdict = 'Low Risk Signals';
+  }
 
-  if (finalScore >= 85) {
-    verdict = 'Critical Risk';
-    verdictDescription = 'Multiple severe phishing or scam indicators identified. Immediate defensive action recommended.';
-  } else if (finalScore >= 70) {
-    verdict = 'High Risk';
-    verdictDescription = 'High-risk brand impersonation, urgency, or credential harvesting lure detected.';
-  } else if (finalScore >= 50) {
-    verdict = 'Elevated Risk';
-    verdictDescription = 'Suspicious structural or keyword patterns detected requiring user caution.';
-  } else if (finalScore >= 35) {
-    verdict = 'Suspicious';
-    verdictDescription = 'Moderate risk indicators present. Independent verification recommended before proceeding.';
-  } else if (finalScore < 10) {
-    verdict = 'Insufficient Evidence';
-    verdictDescription = 'Target provided does not contain sufficient technical indicators for automated scoring.';
+  // Calculate Analysis Confidence independently from risk
+  let analysisConfidence: AnalysisConfidence = 'LOW';
+  const totalFactorsCount = factors.length;
+
+  if (externalIntelAvailable && totalFactorsCount >= 3) {
+    analysisConfidence = 'HIGH';
+  } else if (totalFactorsCount >= 2) {
+    analysisConfidence = 'MEDIUM';
+  } else {
+    analysisConfidence = 'LOW';
   }
 
   const whyThisResult = factors.map(
-    (f) => `[${f.severity}] ${f.name} (+${f.points} pts): ${f.technicalExplanation}`
+    (f) => `[${f.severity}] ${f.name} (${f.points > 0 ? '+' : ''}${f.points} pts): ${f.technicalExplanation}`
   );
 
+  const limitationsNotice = externalIntelAvailable
+    ? 'Analysis incorporates local heuristic evaluation and configured threat intelligence providers.'
+    : 'Local heuristic evaluation active. External threat intelligence providers unconfigured or unavailable; confidence rating reflects local scope.';
+
   return {
-    riskScore: finalScore,
+    riskScore: clampedScore,
     verdict,
-    verdictDescription,
+    analysisConfidence,
     factors,
     whyThisResult,
-    disclaimer: OFFICIAL_LEGAL_DISCLAIMER,
+    limitationsNotice,
   };
 }
+
+export const OFFICIAL_LEGAL_DISCLAIMER =
+  'XTRACY Security Analysis provides deterministic diagnostic indicators and risk scoring for defensive decision support. It does not replace independent security audits or court-certified forensic analysis.';

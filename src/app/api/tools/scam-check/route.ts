@@ -5,11 +5,11 @@ import { analyzeScamContent } from '@/lib/server/scamCheck';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { targetType = 'SMS_TEXT', content = '', privateMode = false } = body;
+    const { targetType = 'URL', content = '', privateMode = false } = body;
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return createApiResponse({
-        error: { code: 'INVALID_INPUT', message: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.' },
+        error: { code: 'INVALID_INPUT', message: 'Target input cannot be empty or whitespace only.' },
         status: 400,
       });
     }
@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
 
     if (!result.valid) {
       return createApiResponse({
-        error: { code: 'INVALID_INPUT', message: result.message },
+        data: result,
+        error: { code: 'REJECTED_TARGET', message: result.rejectionReason },
         status: 400,
       });
     }
@@ -27,13 +28,13 @@ export async function POST(req: NextRequest) {
       data: result,
       dataTrust: {
         status: 'LIVE',
-        sourceName: 'XTRACY Multi-Layer Scam Check Engine v2.1',
+        sourceName: 'XTRACY Evidence-Based Security Analysis Engine v2.1',
         lastRefreshed: new Date().toISOString(),
       },
     });
   } catch (err) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: 'Failed to execute scam analysis.' },
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to execute security analysis pipeline.' },
       status: 500,
     });
   }

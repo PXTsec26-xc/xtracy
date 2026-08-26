@@ -1,146 +1,203 @@
 /**
- * XTRACY Input Classifier Module
- * Deterministically classifies target inputs into VALID_URL, DOMAIN, MESSAGE_TEXT, or INVALID_INPUT.
+ * XTRACY Strict Input Classification Gate
+ * Classifies target inputs into VALID_URL, VALID_DOMAIN, VALID_IP, INVALID_INPUT, or RESTRICTED_TARGET.
  */
 
-import { isPrivateIp } from '@/lib/ssrfProtection';
+import { isPrivateIp, validateUrlForSSRF } from '@/lib/ssrfProtection';
 
-export type InputTypeClassification = 'VALID_URL' | 'DOMAIN' | 'MESSAGE_TEXT' | 'INVALID_INPUT';
+export type InputCategory =
+  | 'VALID_URL'
+  | 'VALID_DOMAIN'
+  | 'VALID_IP'
+  | 'INVALID_INPUT'
+  | 'RESTRICTED_TARGET';
 
-export interface ClassificationResult {
-  classification: InputTypeClassification;
+export interface GateClassificationResult {
+  category: InputCategory;
+  status: 'ACCEPTED' | 'REJECTED';
   normalizedInput: string;
-  errorMessage?: string;
+  rejectionReason?: string;
   isHttpsVerified?: boolean;
 }
 
-export function classifyTargetInput(rawInput: string): ClassificationResult {
+export function classifyInputGate(rawInput: string): GateClassificationResult {
   if (!rawInput || typeof rawInput !== 'string') {
     return {
-      classification: 'INVALID_INPUT',
+      category: 'INVALID_INPUT',
+      status: 'REJECTED',
       normalizedInput: '',
-      errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+      rejectionReason: 'Input is empty or missing.',
     };
   }
 
   const trimmed = rawInput.trim();
   if (trimmed.length === 0) {
     return {
-      classification: 'INVALID_INPUT',
+      category: 'INVALID_INPUT',
+      status: 'REJECTED',
       normalizedInput: '',
-      errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+      rejectionReason: 'Input string cannot be empty or whitespace only.',
     };
   }
 
-  // 1. Reject Forbidden / Malformed Schemes
   const lower = trimmed.toLowerCase();
+
+  // 1. Reject Unsupported & Dangerous Protocol Schemes Immediately
   if (
     lower.startsWith('javascript:') ||
     lower.startsWith('data:') ||
     lower.startsWith('file:') ||
+    lower.startsWith('ftp:') ||
+    lower.startsWith('blob:') ||
     lower === 'https://' ||
     lower === 'http://' ||
     lower === 'https:' ||
     lower === 'http:'
   ) {
     return {
-      classification: 'INVALID_INPUT',
+      category: 'INVALID_INPUT',
+      status: 'REJECTED',
       normalizedInput: trimmed,
-      errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+      rejectionReason: `Unsupported or dangerous scheme prefix '${trimmed.substring(0, 15)}'. Only HTTP/HTTPS URLs, public domains, or public IPs are allowed.`,
     };
   }
 
-  // 2. Check VALID_URL (Requires http:// or https://)
+  // 2. Check RESTRICTED_TARGET (Localhost, Loopback, Private Subnets)
+  if (
+    lower === 'localhost' ||
+    lower === 'localhost.localdomain' ||
+    lower === '127.0.0.1' ||
+    lower === '0.0.0.0' ||
+    lower === '::1' ||
+    lower.startsWith('127.') ||
+    lower.startsWith('192.168.') ||
+    lower.startsWith('10.') ||
+    lower.startsWith('169.254.') ||
+    isPrivateIp(trimmed)
+  ) {
+    return {
+      category: 'RESTRICTED_TARGET',
+      status: 'REJECTED',
+      normalizedInput: trimmed,
+      rejectionReason: `Restricted Destination: Target '${trimmed}' is in a private, loopback, or internal IP subnet and cannot be scanned for security reasons.`,
+    };
+  }
+
+  // 3. Check VALID_URL (Requires http:// or https:// scheme)
   if (lower.startsWith('http://') || lower.startsWith('https://')) {
+    const ssrfCheck = validateUrlForSSRF(trimmed);
+    if (!ssrfCheck.allowed) {
+      return {
+        category: 'RESTRICTED_TARGET',
+        status: 'REJECTED',
+        normalizedInput: trimmed,
+        rejectionReason: ssrfCheck.reason || 'Restricted target destination.',
+      };
+    }
+
     try {
       const parsed = new URL(trimmed);
       const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
 
       if (!hostname || hostname.length === 0) {
         return {
-          classification: 'INVALID_INPUT',
+          category: 'INVALID_INPUT',
+          status: 'REJECTED',
           normalizedInput: trimmed,
-          errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+          rejectionReason: 'URL does not contain a valid hostname.',
         };
       }
 
-      // SSRF / Localhost check
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || isPrivateIp(hostname)) {
+      if (isPrivateIp(hostname)) {
         return {
-          classification: 'INVALID_INPUT',
+          category: 'RESTRICTED_TARGET',
+          status: 'REJECTED',
           normalizedInput: trimmed,
-          errorMessage: 'Restricted target: Localhost and private IP addresses are restricted from automated scanning.',
+          rejectionReason: `Restricted Destination: Hostname '${hostname}' resolves to a restricted private or internal IP.`,
         };
       }
 
-      // Check if hostname has at least one TLD dot or is a valid IP
       const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
       const hasTld = hostname.includes('.');
 
       if (!hasTld && !isIp) {
         return {
-          classification: 'INVALID_INPUT',
+          category: 'INVALID_INPUT',
+          status: 'REJECTED',
           normalizedInput: trimmed,
-          errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+          rejectionReason: 'URL hostname must specify a valid public domain with TLD or public IP address.',
         };
       }
 
       return {
-        classification: 'VALID_URL',
+        category: 'VALID_URL',
+        status: 'ACCEPTED',
         normalizedInput: parsed.toString(),
         isHttpsVerified: parsed.protocol === 'https:',
       };
     } catch {
       return {
-        classification: 'INVALID_INPUT',
+        category: 'INVALID_INPUT',
+        status: 'REJECTED',
         normalizedInput: trimmed,
-        errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+        rejectionReason: 'Malformed URL syntax cannot be parsed by standard URL specs.',
       };
     }
   }
 
-  // 3. Check DOMAIN (No protocol, no spaces, must match domain regex with TLD)
-  if (!trimmed.includes(' ') && !trimmed.includes('\n') && !trimmed.includes('\r')) {
-    const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
-    const isReservedTestTld =
-      lower.endsWith('.example') ||
-      lower.endsWith('.test') ||
-      lower.endsWith('.invalid') ||
-      lower.endsWith('.localhost');
-
-    if (domainRegex.test(trimmed) || isReservedTestTld) {
-      const hostname = trimmed.toLowerCase();
-
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || isPrivateIp(hostname)) {
-        return {
-          classification: 'INVALID_INPUT',
-          normalizedInput: trimmed,
-          errorMessage: 'Restricted target: Localhost and private IP addresses are restricted from automated scanning.',
-        };
-      }
-
+  // 4. Check VALID_IP (Public IPv4 Address)
+  const ipRegex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+  if (ipRegex.test(trimmed)) {
+    if (isPrivateIp(trimmed)) {
       return {
-        classification: 'DOMAIN',
-        normalizedInput: hostname,
-        isHttpsVerified: false, // Cannot verify HTTPS for raw domain string without explicit lookup
+        category: 'RESTRICTED_TARGET',
+        status: 'REJECTED',
+        normalizedInput: trimmed,
+        rejectionReason: `Restricted IP: '${trimmed}' is a private/internal IP address.`,
       };
     }
-  }
 
-  // 4. Check MESSAGE_TEXT (Must be a multi-word or long text message)
-  const words = trimmed.split(/\s+/).filter(Boolean);
-  if (words.length >= 2 || trimmed.length >= 15) {
     return {
-      classification: 'MESSAGE_TEXT',
+      category: 'VALID_IP',
+      status: 'ACCEPTED',
       normalizedInput: trimmed,
       isHttpsVerified: false,
     };
   }
 
-  // 5. Default Fallback -> INVALID_INPUT
+  // 5. Check VALID_DOMAIN (No spaces, contains TLD or reserved test TLD)
+  if (!trimmed.includes(' ') && !trimmed.includes('\n') && !trimmed.includes('\r')) {
+    const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+    const isTestTld =
+      lower.endsWith('.example') ||
+      lower.endsWith('.test') ||
+      lower.endsWith('.invalid') ||
+      lower.endsWith('.localhost');
+
+    if (domainRegex.test(trimmed) || isTestTld) {
+      if (isPrivateIp(lower)) {
+        return {
+          category: 'RESTRICTED_TARGET',
+          status: 'REJECTED',
+          normalizedInput: trimmed,
+          rejectionReason: `Restricted Domain: '${trimmed}' resolves to a restricted target.`,
+        };
+      }
+
+      return {
+        category: 'VALID_DOMAIN',
+        status: 'ACCEPTED',
+        normalizedInput: lower,
+        isHttpsVerified: false,
+      };
+    }
+  }
+
+  // 6. Default Fallback -> INVALID_INPUT
   return {
-    classification: 'INVALID_INPUT',
+    category: 'INVALID_INPUT',
+    status: 'REJECTED',
     normalizedInput: trimmed,
-    errorMessage: 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+    rejectionReason: 'Submitted target is neither a valid HTTP/HTTPS URL, public domain name, nor public IP address.',
   };
 }

@@ -1,31 +1,41 @@
 /**
  * XTRACY Multi-Layer Scam Check Engine
- * Unifies strict input classification, URL analysis, text analysis, threat intelligence abstraction, explainable risk scoring, and evidence normalization.
+ * Evidence-based security analysis pipeline with strict Gate classification, deterministic scoring, separate confidence, and SSRF hardening.
  */
 
-import { classifyTargetInput, ClassificationResult } from '@/lib/server/inputClassifier';
+import { classifyInputGate, GateClassificationResult } from '@/lib/server/inputClassifier';
 import { analyzeUrlTarget } from '@/lib/server/urlAnalyzer';
-import { analyzeTextTarget } from '@/lib/server/textAnalyzer';
 import { queryExternalThreatIntel, UnifiedThreatLookupResult } from '@/lib/server/threatProviders';
-import { calculateExplainableRisk, DetailedIndicatorFactor, RiskVerdict, OFFICIAL_LEGAL_DISCLAIMER } from '@/lib/server/riskEngine';
+import { calculateDeterministicRisk, DetailedIndicatorFactor, RiskVerdict, AnalysisConfidence, OFFICIAL_LEGAL_DISCLAIMER } from '@/lib/server/riskEngine';
 import { generateEvidenceRecord, EvidenceRecord } from '@/lib/server/evidenceNormalizer';
 import { buildSecurityReport, SecurityAnalysisReport } from '@/lib/server/reportGenerator';
 
 export const SCAM_CHECK_DISCLAIMER = OFFICIAL_LEGAL_DISCLAIMER;
 
+export type AnalysisPipelineStatus =
+  | 'IDLE'
+  | 'VALIDATING'
+  | 'ANALYZING'
+  | 'PARTIAL_RESULT'
+  | 'COMPLETE'
+  | 'REJECTED'
+  | 'ERROR';
+
 export interface ScamCheckRequest {
-  targetType?: 'URL' | 'DOMAIN' | 'EMAIL_TEXT' | 'SMS_TEXT' | 'JOB_OFFER' | 'PAYMENT_REQUEST' | 'CRYPTO_LURE' | 'SOCIAL_MEDIA';
+  targetType?: string;
   content: string;
   privateMode?: boolean;
 }
 
-export interface ScamCheckSuccessResult {
+export interface ScamCheckAcceptedResult {
   valid: true;
-  classification: ClassificationResult['classification'];
-  targetType: string;
-  contentSnippet: string;
-  verdict: RiskVerdict;
+  status: 'ACCEPTED';
+  analysisStatus: 'COMPLETE' | 'PARTIAL_RESULT';
+  category: GateClassificationResult['category'];
+  normalizedTarget: string;
   riskScore: number; // 0 to 100
+  verdict: RiskVerdict;
+  analysisConfidence: AnalysisConfidence;
   factors: DetailedIndicatorFactor[];
   whyThisResult: string[];
   threatIntelSummary: UnifiedThreatLookupResult;
@@ -35,41 +45,57 @@ export interface ScamCheckSuccessResult {
   analyzedAt: string;
 }
 
-export interface ScamCheckErrorResult {
+export interface ScamCheckRejectedResult {
   valid: false;
-  classification: 'INVALID_INPUT';
-  error: string;
-  message: string;
+  status: 'REJECTED';
+  analysisStatus: 'REJECTED';
+  category: GateClassificationResult['category'];
+  normalizedTarget: string;
+  rejectionReason: string;
+  riskScore: null;
+  verdict: 'Rejected Target';
+  analysisConfidence: 'N/A';
+  securityReport: null;
+  disclaimer: string;
+  analyzedAt: string;
 }
 
-export type ScamCheckResult = ScamCheckSuccessResult | ScamCheckErrorResult;
+export type ScamCheckResult = ScamCheckAcceptedResult | ScamCheckRejectedResult;
 
 export function analyzeScamContent(req: ScamCheckRequest): ScamCheckResult {
   const { content, privateMode = false } = req;
 
-  // 1. Strict Input Classification First
-  const classResult = classifyTargetInput(content);
+  // 1. Strict Gate Input Classification
+  const gateResult = classifyInputGate(content);
 
-  if (classResult.classification === 'INVALID_INPUT') {
+  if (gateResult.status === 'REJECTED') {
     return {
       valid: false,
-      classification: 'INVALID_INPUT',
-      error: 'INVALID_INPUT',
-      message: classResult.errorMessage || 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.',
+      status: 'REJECTED',
+      analysisStatus: 'REJECTED',
+      category: gateResult.category,
+      normalizedTarget: gateResult.normalizedInput,
+      rejectionReason: gateResult.rejectionReason || 'Target input failed classification gate validation.',
+      riskScore: null,
+      verdict: 'Rejected Target',
+      analysisConfidence: 'N/A',
+      securityReport: null,
+      disclaimer: OFFICIAL_LEGAL_DISCLAIMER,
+      analyzedAt: new Date().toISOString(),
     };
   }
 
-  const normalized = classResult.normalizedInput;
+  const normalized = gateResult.normalizedInput;
 
-  // 2. Gather Evidence-Based Factors by Classification
-  let localFactors: DetailedIndicatorFactor[] = [];
-  if (classResult.classification === 'VALID_URL' || classResult.classification === 'DOMAIN') {
-    localFactors = analyzeUrlTarget(normalized, classResult);
-  } else {
-    localFactors = analyzeTextTarget(normalized);
-  }
+  // 2. Real Evidence-Based Analysis Stage
+  // Pass gateResult to analyzeUrlTarget to enforce strict HTTPS verification rules
+  const localFactors: DetailedIndicatorFactor[] = analyzeUrlTarget(normalized, {
+    classification: gateResult.category === 'VALID_URL' ? 'VALID_URL' : gateResult.category === 'VALID_DOMAIN' ? 'DOMAIN' : 'INVALID_INPUT',
+    normalizedInput: normalized,
+    isHttpsVerified: gateResult.isHttpsVerified,
+  });
 
-  // 3. Query External Threat Intelligence (Skipped if privateMode is true)
+  // 3. Threat Intelligence Provider Query (Skipped if privateMode is true)
   const threatIntelSummary: UnifiedThreatLookupResult = {
     externalLookupExecuted: !privateMode,
     privacyMode: privateMode ? 'PRIVATE_LOCAL' : 'HYBRID_EXTERNAL',
@@ -77,48 +103,52 @@ export function analyzeScamContent(req: ScamCheckRequest): ScamCheckResult {
       {
         providerName: 'VirusTotal Intelligence API',
         status: 'UNAVAILABLE',
-        threatDetails: 'External threat intelligence unavailable (API key not configured). Result is based on local analysis only.',
+        threatDetails: 'External threat intelligence unavailable (API key not configured). Result is based on local evidence analysis only.',
         queryTimestamp: new Date().toISOString(),
       },
       {
         providerName: 'Google Safe Browsing API',
         status: 'UNAVAILABLE',
-        threatDetails: 'External threat intelligence unavailable (API key not configured). Result is based on local analysis only.',
+        threatDetails: 'External threat intelligence unavailable (API key not configured). Result is based on local evidence analysis only.',
         queryTimestamp: new Date().toISOString(),
       },
     ],
     summary: privateMode
       ? 'Private Local Analysis active. External threat intelligence query bypassed by user preference.'
-      : 'Local heuristic analysis completed. External threat provider lookups executed where configured.',
+      : 'Local evidence analysis completed. External threat provider lookups executed where configured.',
   };
 
-  // If no negative factors were found, add positive baseline factor
+  // If no negative heuristic factors were triggered, record evidence-based baseline factor
   if (localFactors.filter((f) => f.points > 0).length === 0) {
     localFactors.push({
-      name: 'No High-Risk Scam Indicators Detected',
+      id: 'FACTOR-CLEAN-01',
+      name: 'No Suspicious Structural Indicators Detected',
       severity: 'LOW',
       points: 0,
       source: 'Local Heuristic Engine',
-      technicalExplanation: 'The submitted target does not contain recognized brand impersonation, credential harvesting, or urgency indicators.',
-      fraudAssociationRationale: 'Clean structural patterns do not guarantee complete safety. Exercise standard online vigilance.',
+      technicalExplanation: 'The target hostname does not display brand keyword spoofing, deceptive hyphenation, or excessive subdomain depth.',
+      fraudAssociationRationale: 'Clean structural patterns indicate absence of known heuristic anomalies, but do not guarantee complete safety.',
+      evidence: `Target: ${normalized}`,
+      timestamp: new Date().toISOString(),
     });
   }
 
-  // 4. Calculate Explainable Risk Score & Verdict
-  const riskOutput = calculateExplainableRisk(localFactors, 10);
+  // 4. Calculate Deterministic Risk Score & Separate Confidence Level
+  const externalIntelConfigured = false; // VirusTotal/SafeBrowsing keys unconfigured in default environment
+  const riskOutput = calculateDeterministicRisk(localFactors, externalIntelConfigured);
 
   // 5. Generate Evidence Record with SHA-256 Checksum
   const evidenceRecord = generateEvidenceRecord(
-    classResult.classification,
+    gateResult.category,
     normalized,
     riskOutput.riskScore,
     riskOutput.verdict,
     riskOutput.factors
   );
 
-  // 6. Build Printable / Exportable Security Report
+  // 6. Build Security Analysis Report
   const securityReport = buildSecurityReport({
-    targetType: classResult.classification,
+    targetType: gateResult.category,
     content: normalized,
     verdict: riskOutput.verdict,
     riskScore: riskOutput.riskScore,
@@ -130,11 +160,13 @@ export function analyzeScamContent(req: ScamCheckRequest): ScamCheckResult {
 
   return {
     valid: true,
-    classification: classResult.classification,
-    targetType: classResult.classification,
-    contentSnippet: normalized.substring(0, 150) + (normalized.length > 150 ? '...' : ''),
-    verdict: riskOutput.verdict,
+    status: 'ACCEPTED',
+    analysisStatus: 'COMPLETE',
+    category: gateResult.category,
+    normalizedTarget: normalized,
     riskScore: riskOutput.riskScore,
+    verdict: riskOutput.verdict,
+    analysisConfidence: riskOutput.analysisConfidence,
     factors: riskOutput.factors,
     whyThisResult: riskOutput.whyThisResult,
     threatIntelSummary,

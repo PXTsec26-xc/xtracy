@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { FeatureStatusBadge } from '@/components/ui/FeatureStatusBadge';
-import { ScamCheckSuccessResult, SCAM_CHECK_DISCLAIMER } from '@/lib/server/scamCheck';
+import { ScamCheckAcceptedResult, ScamCheckRejectedResult, SCAM_CHECK_DISCLAIMER, AnalysisPipelineStatus } from '@/lib/server/scamCheck';
 import { ReportModal } from '@/components/reports/ReportModal';
 import {
   ShieldAlert,
@@ -18,14 +18,16 @@ import {
   ExternalLink,
   Shield,
   XCircle,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function ScamCheckPage() {
-  const [targetType, setTargetType] = useState<any>('SMS_TEXT');
   const [content, setContent] = useState('');
   const [privateMode, setPrivateMode] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ScamCheckSuccessResult | null>(null);
+  const [pipelineStatus, setPipelineStatus] = useState<AnalysisPipelineStatus>('IDLE');
+  const [result, setResult] = useState<ScamCheckAcceptedResult | null>(null);
+  const [rejectedResult, setRejectedResult] = useState<ScamCheckRejectedResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showWhy, setShowWhy] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -34,26 +36,36 @@ export default function ScamCheckPage() {
     e.preventDefault();
     if (!content.trim()) return;
 
-    setLoading(true);
-    setErrorMessage(null);
+    // CRITICAL STATE RESET: Completely clear previous scan results when a new scan begins
+    setPipelineStatus('VALIDATING');
     setResult(null);
+    setRejectedResult(null);
+    setErrorMessage(null);
+    setShowWhy(false);
 
     try {
+      setPipelineStatus('ANALYZING');
+
       const res = await fetch('/api/tools/scam-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetType, content, privateMode }),
+        body: JSON.stringify({ content, privateMode }),
       });
       const data = await res.json();
+
       if (res.ok && data.success && data.data?.valid) {
         setResult(data.data);
+        setPipelineStatus('COMPLETE');
+      } else if (data.data && data.data.valid === false) {
+        setRejectedResult(data.data);
+        setPipelineStatus('REJECTED');
       } else {
-        setErrorMessage(data.error?.message || 'Unable to classify this input. Enter a valid URL, domain, or suspicious message for analysis.');
+        setErrorMessage(data.error?.message || 'Unable to classify or analyze target input.');
+        setPipelineStatus('ERROR');
       }
     } catch (err) {
-      setErrorMessage('Communication error with Scam Check Engine. Please check your network connection.');
-    } finally {
-      setLoading(false);
+      setErrorMessage('Communication failure with security analysis engine.');
+      setPipelineStatus('ERROR');
     }
   };
 
@@ -74,9 +86,9 @@ export default function ScamCheckPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-black text-white flex items-center gap-2">
               <ShieldAlert className="w-8 h-8 text-amber-400" />
-              XTRACY Scam Check Engine
+              XTRACY Evidence-Based Security Engine
             </h1>
-            <Badge type="productStatus" value="MULTI-LAYER SCAM DIAGNOSTIC" size="sm" />
+            <Badge type="productStatus" value="PRODUCTION DIAGNOSTIC" size="sm" />
           </div>
 
           <div className="flex items-center gap-3">
@@ -97,94 +109,142 @@ export default function ScamCheckPage() {
         </div>
 
         <p className="text-xs text-gray-400">
-          Analyze suspicious messages, URLs, job offers, payment requests, or crypto lures against deterministic risk indicators.
+          Strict Gate classification, SSRF protection, deterministic risk scoring, and evidence-traceable indicator checks.
         </p>
       </div>
 
       {/* Input Form */}
       <GlassCard className="p-6 border-amber-500/40 shadow-2xl flex flex-col gap-4">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider text-amber-400 flex items-center gap-2">
-          <Search className="w-4 h-4" /> Submit Target Content for Scam Analysis
+          <Search className="w-4 h-4" /> Submit Target for Security Analysis
         </h3>
 
         <form onSubmit={handleRunCheck} className="flex flex-col gap-4 text-xs">
           <div className="flex flex-col gap-1">
-            <label className="font-bold text-gray-300">Content Category:</label>
-            <select
-              value={targetType}
-              onChange={(e) => setTargetType(e.target.value)}
-              className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 text-white text-xs font-bold"
-            >
-              <option value="SMS_TEXT">SMS / WhatsApp Message</option>
-              <option value="EMAIL_TEXT">Email Body / Header Content</option>
-              <option value="JOB_OFFER">Job Offer / Recruitment Message</option>
-              <option value="PAYMENT_REQUEST">Payment / Wire Transfer Lure</option>
-              <option value="CRYPTO_LURE">Cryptocurrency / Investment Lure</option>
-              <option value="SOCIAL_MEDIA">Social Media / Direct Message</option>
-              <option value="URL">Website URL / Domain Target</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-bold text-gray-300">Suspicious Target Content or URL:</label>
+            <label className="font-bold text-gray-300">Target URL, Public Domain, or IP Address:</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste suspicious URL (e.g. 'https://example.com'), domain ('example.com'), or message text ('Urgent! Your account is suspended. Verify now: http://...')..."
-              rows={4}
-              className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 text-white placeholder-gray-500 text-xs focus:border-amber-400 resize-none"
+              placeholder="Enter public URL (e.g. 'https://example.com'), domain ('example.com'), or public IP address..."
+              rows={3}
+              className="p-3.5 rounded-xl bg-darkBg-panel border border-gray-800 text-white placeholder-gray-500 text-xs focus:border-amber-400 resize-none font-mono"
               required
             />
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-[11px] text-gray-400 font-mono">
-              {privateMode ? '🔒 Mode: Private Local Heuristics Only' : '🌐 Mode: Hybrid Heuristic + Threat Intelligence'}
+              Status: <strong className="text-brand-cyan uppercase">{pipelineStatus}</strong>
             </span>
 
             <button
               type="submit"
-              disabled={loading}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center gap-2"
+              disabled={pipelineStatus === 'VALIDATING' || pipelineStatus === 'ANALYZING'}
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center gap-2 disabled:opacity-50"
             >
-              <Search className="w-4 h-4" />
-              <span>{loading ? 'Analyzing Input...' : 'Analyze Target'}</span>
+              {pipelineStatus === 'VALIDATING' || pipelineStatus === 'ANALYZING' ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Executing Pipeline...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  <span>Analyze Target</span>
+                </>
+              )}
             </button>
           </div>
         </form>
       </GlassCard>
 
-      {/* Error Output Card for INVALID_INPUT */}
-      {errorMessage && (
+      {/* REJECTED Target UI Card (For INVALID_INPUT or RESTRICTED_TARGET) */}
+      {pipelineStatus === 'REJECTED' && rejectedResult && (
+        <GlassCard className="p-6 border-red-500/40 shadow-2xl flex flex-col gap-4 text-xs animate-fadeIn font-mono">
+          <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+            <div className="flex items-center gap-2 text-red-400 font-bold">
+              <XCircle className="w-5 h-5" />
+              <h3 className="text-base text-white">Input Classification Gate: REJECTED</h3>
+            </div>
+            <span className="px-3 py-1 rounded bg-red-950 border border-red-800 text-red-300 text-[10px] font-bold">
+              {rejectedResult.category}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 flex flex-col gap-0.5">
+              <span className="text-gray-400 text-[10px] uppercase">Status:</span>
+              <strong className="text-red-400 font-bold">REJECTED</strong>
+            </div>
+
+            <div className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 flex flex-col gap-0.5">
+              <span className="text-gray-400 text-[10px] uppercase">Risk Score:</span>
+              <strong className="text-gray-400 font-bold">N/A</strong>
+            </div>
+
+            <div className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 flex flex-col gap-0.5">
+              <span className="text-gray-400 text-[10px] uppercase">Analysis Confidence:</span>
+              <strong className="text-gray-400 font-bold">N/A</strong>
+            </div>
+
+            <div className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 flex flex-col gap-0.5">
+              <span className="text-gray-400 text-[10px] uppercase">Security Analysis:</span>
+              <strong className="text-amber-400 font-bold">Not Performed</strong>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-red-950/60 border border-red-800/80 flex flex-col gap-1">
+            <strong className="text-white font-sans font-bold">Rejection Reason:</strong>
+            <p className="text-red-200 text-xs font-sans leading-relaxed">{rejectedResult.rejectionReason}</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 text-[11px] text-gray-400 font-sans flex items-center justify-between">
+            <span>Normal Security Report: Disabled for Rejected Inputs</span>
+            <button disabled className="px-4 py-2 rounded-xl bg-gray-800 text-gray-500 font-bold text-xs cursor-not-allowed">
+              Generate Report (Disabled)
+            </button>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* ERROR State Card */}
+      {pipelineStatus === 'ERROR' && errorMessage && (
         <div className="p-6 rounded-2xl bg-red-950/80 border border-red-800 flex items-start gap-3 text-red-200 text-xs animate-fadeIn">
           <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
           <div className="flex flex-col gap-1">
-            <strong className="text-white text-sm font-bold">Input Validation Exception</strong>
+            <strong className="text-white text-sm font-bold">Pipeline Error Exception</strong>
             <p>{errorMessage}</p>
           </div>
         </div>
       )}
 
-      {/* Analysis Result Output */}
-      {result && result.valid && (
+      {/* COMPLETE Analysis Result Output */}
+      {pipelineStatus === 'COMPLETE' && result && (
         <GlassCard className="p-6 border-gray-800 flex flex-col gap-6 text-xs animate-fadeIn">
           {/* Verdict Header */}
           <div className="flex items-center justify-between border-b border-gray-800 pb-4 flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2 font-mono text-[10px] text-brand-cyan uppercase font-bold">
-                <span>Input Classification:</span>
-                <span className="px-2 py-0.5 rounded bg-darkBg-panel border border-gray-800 text-white">{result.classification}</span>
+                <span>Category: {result.category}</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                  {result.analysisStatus}
+                </span>
               </div>
               <h3 className="text-xl font-black text-white flex items-center gap-2 mt-1">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                 {result.verdict}
               </h3>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <div className="flex flex-col items-end">
                 <span className="text-2xl font-black text-white">{result.riskScore} <span className="text-xs text-gray-500 font-normal">/ 100</span></span>
-                <span className="text-[10px] text-brand-cyan font-mono">Explainable Risk Score</span>
+                <span className="text-[10px] text-brand-cyan font-mono font-bold">Deterministic Risk Score</span>
+              </div>
+
+              <div className="flex flex-col items-end">
+                <span className="text-lg font-extrabold text-amber-400">{result.analysisConfidence}</span>
+                <span className="text-[10px] text-gray-400 font-mono">Analysis Confidence</span>
               </div>
 
               <button
@@ -204,7 +264,7 @@ export default function ScamCheckPage() {
               className="flex items-center justify-between p-3.5 rounded-xl bg-darkBg-panel border border-gray-800 text-amber-400 font-bold text-xs hover:border-amber-400 transition-all"
             >
               <span className="flex items-center gap-2">
-                <HelpCircle className="w-4 h-4" /> Why did XTRACY give this result? ({result.factors.length} Contributing Indicators)
+                <HelpCircle className="w-4 h-4" /> Traceable Evidence Factors ({result.factors.length} Detected)
               </span>
               {showWhy ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -281,7 +341,7 @@ export default function ScamCheckPage() {
       </GlassCard>
 
       {/* Report Modal */}
-      {showReportModal && result && result.valid && (
+      {showReportModal && result && result.valid && result.securityReport && (
         <ReportModal report={result.securityReport} onClose={() => setShowReportModal(false)} />
       )}
     </div>

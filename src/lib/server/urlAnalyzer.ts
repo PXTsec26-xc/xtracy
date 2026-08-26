@@ -5,7 +5,7 @@
 
 import { DetailedIndicatorFactor } from '@/lib/server/riskEngine';
 import { validateUrlForSSRF } from '@/lib/ssrfProtection';
-import { ClassificationResult } from '@/lib/server/inputClassifier';
+import { GateClassificationResult } from '@/lib/server/inputClassifier';
 
 const TARGETED_BRANDS = [
   { name: 'PayPal', keyword: 'paypal', officialDomain: 'paypal.com' },
@@ -45,12 +45,11 @@ const SENSITIVE_KEYWORDS = [
 
 export function analyzeUrlTarget(
   inputUrl: string,
-  classResult?: ClassificationResult
+  classResult?: { classification: 'VALID_URL' | 'DOMAIN' | 'INVALID_INPUT'; normalizedInput: string; isHttpsVerified?: boolean }
 ): DetailedIndicatorFactor[] {
   const factors: DetailedIndicatorFactor[] = [];
   let rawUrl = inputUrl.trim();
 
-  // If no scheme was provided, default to https:// ONLY for URL parsing purposes, but do NOT award HTTPS points unless explicitly verified!
   let isExplicitHttps = classResult?.isHttpsVerified ?? false;
   if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
     rawUrl = 'https://' + rawUrl;

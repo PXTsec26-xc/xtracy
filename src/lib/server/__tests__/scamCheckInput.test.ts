@@ -1,92 +1,85 @@
 /**
- * Automated Input Validation & Scam Check Pipeline Test Suite
+ * Automated Input Validation & Evidence-Based Security Pipeline Test Suite
  */
 
-import { classifyTargetInput } from '@/lib/server/inputClassifier';
+import { classifyInputGate } from '@/lib/server/inputClassifier';
 import { analyzeScamContent } from '@/lib/server/scamCheck';
 
 export function runScamCheckInputTests() {
-  const results: { testName: string; input: string; expectedClassification: string; actualClassification: string; passed: boolean; details: string }[] = [];
+  const results: { testName: string; input: string; expectedCategory: string; actualCategory: string; passed: boolean; details: string }[] = [];
 
   const testCases = [
-    {
-      name: 'Valid HTTPS URL',
-      input: 'https://example.com',
-      expectedClass: 'VALID_URL',
-      checkScore: (res: any) => res.valid && res.classification === 'VALID_URL' && res.factors.some((f: any) => f.name === 'HTTPS Encrypted Transport'),
-    },
-    {
-      name: 'Valid Domain',
-      input: 'example.com',
-      expectedClass: 'DOMAIN',
-      checkScore: (res: any) => res.valid && res.classification === 'DOMAIN' && res.factors.some((f: any) => f.name === 'Unverified Domain Transport'),
-    },
-    {
-      name: 'Invalid Malformed String',
-      input: 'not-a-valid-url',
-      expectedClass: 'INVALID_INPUT',
-      checkScore: (res: any) => !res.valid && res.classification === 'INVALID_INPUT' && res.error === 'INVALID_INPUT',
-    },
-    {
-      name: 'Normal Text Sentence',
-      input: 'a normal sentence',
-      expectedClass: 'MESSAGE_TEXT',
-      checkScore: (res: any) => res.valid && res.classification === 'MESSAGE_TEXT' && res.riskScore <= 20,
-    },
-    {
-      name: 'Suspicious Scam Message',
-      input: 'Urgent! Your account is suspended. Verify now: http://phish.com',
-      expectedClass: 'MESSAGE_TEXT',
-      checkScore: (res: any) => res.valid && res.classification === 'MESSAGE_TEXT' && res.riskScore >= 35,
-    },
-    {
-      name: 'Empty String Input',
-      input: '',
-      expectedClass: 'INVALID_INPUT',
-      checkScore: (res: any) => !res.valid && res.classification === 'INVALID_INPUT',
-    },
-    {
-      name: 'Malformed Scheme String',
-      input: 'https://',
-      expectedClass: 'INVALID_INPUT',
-      checkScore: (res: any) => !res.valid && res.classification === 'INVALID_INPUT',
-    },
-    {
-      name: 'Forbidden Scheme (javascript:)',
-      input: 'javascript:alert(1)',
-      expectedClass: 'INVALID_INPUT',
-      checkScore: (res: any) => !res.valid && res.classification === 'INVALID_INPUT',
-    },
-    {
-      name: 'Restricted Localhost Target',
-      input: 'localhost',
-      expectedClass: 'INVALID_INPUT',
-      checkScore: (res: any) => !res.valid && res.classification === 'INVALID_INPUT',
-    },
-    {
-      name: 'Restricted Private Loopback IP',
-      input: '127.0.0.1',
-      expectedClass: 'INVALID_INPUT',
-      checkScore: (res: any) => !res.valid && res.classification === 'INVALID_INPUT',
-    },
+    // INVALID / RESTRICTED TARGETS
+    { name: 'Invalid Malformed String', input: 'not-a-valid-url', expectedCategory: 'INVALID_INPUT', expectReject: true },
+    { name: 'Forbidden Scheme (javascript:)', input: 'javascript:alert(1)', expectedCategory: 'INVALID_INPUT', expectReject: true },
+    { name: 'Forbidden Scheme (data:)', input: 'data:text/html,test', expectedCategory: 'INVALID_INPUT', expectReject: true },
+    { name: 'Forbidden Scheme (file:)', input: 'file:///etc/passwd', expectedCategory: 'INVALID_INPUT', expectReject: true },
+    { name: 'Restricted Localhost Target', input: 'localhost', expectedCategory: 'RESTRICTED_TARGET', expectReject: true },
+    { name: 'Restricted Loopback IPv4', input: '127.0.0.1', expectedCategory: 'RESTRICTED_TARGET', expectReject: true },
+    { name: 'Restricted Loopback IPv6', input: '::1', expectedCategory: 'RESTRICTED_TARGET', expectReject: true },
+    { name: 'Restricted Private IPv4 Class C', input: '192.168.1.1', expectedCategory: 'RESTRICTED_TARGET', expectReject: true },
+    { name: 'Restricted Private IPv4 Class A', input: '10.0.0.1', expectedCategory: 'RESTRICTED_TARGET', expectReject: true },
+    { name: 'Restricted Private IPv4 Class B', input: '172.16.0.1', expectedCategory: 'RESTRICTED_TARGET', expectReject: true },
+
+    // VALID PUBLIC TARGETS
+    { name: 'Public HTTPS URL', input: 'https://example.com', expectedCategory: 'VALID_URL', expectReject: false },
+    { name: 'Public HTTP URL', input: 'http://example.com', expectedCategory: 'VALID_URL', expectReject: false },
+    { name: 'Public Domain Name', input: 'example.com', expectedCategory: 'VALID_DOMAIN', expectReject: false },
+    { name: 'Public IP Address', input: '8.8.8.8', expectedCategory: 'VALID_IP', expectReject: false },
   ];
 
   for (const tc of testCases) {
-    const classRes = classifyTargetInput(tc.input);
+    const gateRes = classifyInputGate(tc.input);
     const analysisRes = analyzeScamContent({ content: tc.input });
-    const passed = classRes.classification === tc.expectedClass && tc.checkScore(analysisRes);
+
+    let passed = false;
+    if (tc.expectReject) {
+      passed =
+        gateRes.category === tc.expectedCategory &&
+        !analysisRes.valid &&
+        analysisRes.riskScore === null &&
+        analysisRes.securityReport === null &&
+        analysisRes.analysisStatus === 'REJECTED';
+    } else {
+      passed =
+        gateRes.category === tc.expectedCategory &&
+        analysisRes.valid &&
+        typeof analysisRes.riskScore === 'number' &&
+        analysisRes.analysisStatus === 'COMPLETE';
+    }
 
     results.push({
       testName: tc.name,
       input: tc.input,
-      expectedClassification: tc.expectedClass,
-      actualClassification: classRes.classification,
+      expectedCategory: tc.expectedCategory,
+      actualCategory: gateRes.category,
       passed,
       details: passed
         ? 'PASS'
-        : `FAIL: Class=${classRes.classification}, Valid=${(analysisRes as any).valid}`,
+        : `FAIL: Category=${gateRes.category}, Valid=${(analysisRes as any).valid}, Score=${(analysisRes as any).riskScore}`,
     });
   }
+
+  // STATE RESET VERIFICATION TEST: Scan valid target then invalid target
+  const validScan = analyzeScamContent({ content: 'https://example.com' });
+  const invalidScan = analyzeScamContent({ content: 'localhost' });
+
+  const stateResetPassed =
+    validScan.valid === true &&
+    typeof validScan.riskScore === 'number' &&
+    invalidScan.valid === false &&
+    invalidScan.riskScore === null &&
+    invalidScan.securityReport === null &&
+    invalidScan.analysisStatus === 'REJECTED';
+
+  results.push({
+    testName: 'State Isolation & Non-Leakage Test',
+    input: 'https://example.com -> localhost',
+    expectedCategory: 'ISOLATED_STATES',
+    actualCategory: invalidScan.analysisStatus,
+    passed: stateResetPassed,
+    details: stateResetPassed ? 'PASS: Invalid scan produced null score without leaking previous valid scan data' : 'FAIL',
+  });
 
   return results;
 }
