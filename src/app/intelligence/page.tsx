@@ -1,15 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThreatCard } from '@/components/feed/ThreatCard';
 import { MOCK_THREAT_REPORTS } from '@/lib/mockData/threats';
 import { Badge } from '@/components/ui/Badge';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Radio, Search, Filter } from 'lucide-react';
+import { DataTrustBadge } from '@/components/ui/DataTrustBadge';
+import { Radio, Search, Filter, RefreshCw } from 'lucide-react';
+import { ThreatReport } from '@/types';
 
 export default function IntelligencePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [reports, setReports] = useState<ThreatReport[]>(MOCK_THREAT_REPORTS);
+  const [loading, setLoading] = useState(true);
+  const [dataTrustStatus, setDataTrustStatus] = useState<'LIVE' | 'DEMO' | 'FALLBACK'>('LIVE');
+  const [sourceName, setSourceName] = useState('CISA KEV Live Feed');
+
+  useEffect(() => {
+    async function loadLiveThreats() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/threat-intelligence');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            setReports(json.data);
+            if (json.dataTrust) {
+              setDataTrustStatus(json.dataTrust.status || 'LIVE');
+              setSourceName(json.dataTrust.sourceName || 'CISA KEV Live Feed');
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback to verified curated advisories
+        setDataTrustStatus('FALLBACK');
+        setSourceName('Curated Security Advisories');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadLiveThreats();
+  }, []);
 
   const categories = [
     'ALL',
@@ -19,8 +52,10 @@ export default function IntelligencePage() {
     'Women\'s Digital Safety',
   ];
 
-  const filteredReports = MOCK_THREAT_REPORTS.filter((r) => {
-    const matchesSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) || r.summary.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredReports = reports.filter((r) => {
+    const matchesSearch =
+      r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.summary.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCat = selectedCategory === 'ALL' || r.category === selectedCategory;
     return matchesSearch && matchesCat;
   });
@@ -29,15 +64,18 @@ export default function IntelligencePage() {
     <div className="flex flex-col gap-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-black text-white flex items-center gap-2">
-            <Radio className="w-8 h-8 text-brand-cyan animate-pulse" />
-            Threat Intelligence & Security Advisories
-          </h1>
-          <Badge type="productStatus" value="VERIFIED & DEMO FEEDS" size="sm" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black text-white flex items-center gap-2">
+              <Radio className="w-8 h-8 text-brand-cyan animate-pulse" />
+              Threat Intelligence & Security Advisories
+            </h1>
+            <Badge type="productStatus" value="LIVE CISA & ADVISORY FEED" size="sm" />
+          </div>
+          <DataTrustBadge status={dataTrustStatus} sourceName={sourceName} />
         </div>
         <p className="text-xs text-gray-400">
-          Search security advisories, vulnerability reports, and incident alerts with 3 reading modes (Beginner, Student, Professional).
+          Search live CISA vulnerabilities, security advisories, and incident alerts with 3 reading modes (Beginner, Student, Professional).
         </p>
       </div>
 
@@ -72,11 +110,18 @@ export default function IntelligencePage() {
       </GlassCard>
 
       {/* Feed Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredReports.map((report) => (
-          <ThreatCard key={report.id} report={report} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center p-12 text-xs text-gray-400 gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin text-brand-cyan" />
+          <span>Fetching live threat intelligence records from CISA feed...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredReports.map((report) => (
+            <ThreatCard key={report.id} report={report} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

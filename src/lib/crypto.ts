@@ -4,9 +4,23 @@
  * 100% local in-browser encryption. Zero server transmission.
  */
 
+export interface WebCryptoPayload {
+  ciphertextHex: string;
+  ivHex: string;
+  saltHex: string;
+}
+
+function getWebCrypto(): Crypto {
+  if (typeof window !== 'undefined' && window.crypto) {
+    return window.crypto;
+  }
+  return globalThis.crypto;
+}
+
 export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+  const webCrypto = getWebCrypto();
   const enc = new TextEncoder();
-  const passphraseKey = await window.crypto.subtle.importKey(
+  const passphraseKey = await webCrypto.subtle.importKey(
     'raw',
     enc.encode(passphrase),
     { name: 'PBKDF2' },
@@ -14,10 +28,12 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
     ['deriveKey']
   );
 
-  return window.crypto.subtle.deriveKey(
+  const saltBuffer = salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength) as ArrayBuffer;
+
+  return webCrypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt.buffer as ArrayBuffer,
+      salt: saltBuffer,
       iterations: 100000,
       hash: 'SHA-256',
     },
@@ -28,40 +44,51 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
   );
 }
 
-export async function encryptData(data: string, passphrase: string): Promise<{ ciphertextHex: string; ivHex: string; saltHex: string }> {
+export async function encryptText(data: string, key: CryptoKey, salt?: Uint8Array): Promise<WebCryptoPayload> {
+  const webCrypto = getWebCrypto();
   const enc = new TextEncoder();
-  const salt = window.crypto.getRandomValues(new Uint8Array(16));
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const saltBytes = salt || webCrypto.getRandomValues(new Uint8Array(16));
+  const iv = webCrypto.getRandomValues(new Uint8Array(12));
 
-  const key = await deriveKey(passphrase, salt);
-  const encryptedBuffer = await window.crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer },
+  const encryptedBuffer = await webCrypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) as ArrayBuffer },
     key,
     enc.encode(data)
   );
 
-  const ciphertextHex = bufToHex(new Uint8Array(encryptedBuffer));
-  const ivHex = bufToHex(iv);
-  const saltHex = bufToHex(salt);
-
-  return { ciphertextHex, ivHex, saltHex };
+  return {
+    ciphertextHex: bufToHex(new Uint8Array(encryptedBuffer)),
+    ivHex: bufToHex(iv),
+    saltHex: bufToHex(saltBytes),
+  };
 }
 
-export async function decryptData(ciphertextHex: string, ivHex: string, saltHex: string, passphrase: string): Promise<string> {
+export async function decryptText(payload: WebCryptoPayload, key: CryptoKey): Promise<string> {
+  const webCrypto = getWebCrypto();
   const dec = new TextDecoder();
-  const ciphertext = hexToBuf(ciphertextHex);
-  const iv = hexToBuf(ivHex);
-  const salt = hexToBuf(saltHex);
+  const ciphertext = hexToBuf(payload.ciphertextHex);
+  const iv = hexToBuf(payload.ivHex);
 
-  const key = await deriveKey(passphrase, salt);
-  
-  const decryptedBuffer = await window.crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer },
+  const decryptedBuffer = await webCrypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) as ArrayBuffer },
     key,
-    ciphertext.buffer as ArrayBuffer
+    ciphertext.buffer.slice(ciphertext.byteOffset, ciphertext.byteOffset + ciphertext.byteLength) as ArrayBuffer
   );
 
   return dec.decode(decryptedBuffer);
+}
+
+export async function encryptData(data: string, passphrase: string): Promise<WebCryptoPayload> {
+  const webCrypto = getWebCrypto();
+  const salt = webCrypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKey(passphrase, salt);
+  return encryptText(data, key, salt);
+}
+
+export async function decryptData(ciphertextHex: string, ivHex: string, saltHex: string, passphrase: string): Promise<string> {
+  const salt = hexToBuf(saltHex);
+  const key = await deriveKey(passphrase, salt);
+  return decryptText({ ciphertextHex, ivHex, saltHex }, key);
 }
 
 function bufToHex(buffer: Uint8Array): string {
@@ -71,9 +98,12 @@ function bufToHex(buffer: Uint8Array): string {
 }
 
 function hexToBuf(hexString: string): Uint8Array {
-  const bytes = new Uint8Array(Math.ceil(hexString.length / 2));
+  if (!hexString) return new Uint8Array(0);
+  const cleanHex = hexString.replace(/[^0-9a-fA-F]/g, '');
+  const bytes = new Uint8Array(Math.ceil(cleanHex.length / 2));
   for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hexString.substring(i * 2, i * 2 + 2), 16);
+    bytes[i] = parseInt(cleanHex.substring(i * 2, i * 2 + 2), 16);
   }
   return bytes;
 }
+

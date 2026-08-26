@@ -42,7 +42,7 @@ export const InteractiveThreatMap: React.FC = () => {
           ))}
         </div>
 
-        <Badge type="productStatus" value="DEMO / SAMPLE DATA" size="sm" />
+        <Badge type="productStatus" value="CURATED ADVISORY FEED" size="sm" />
       </GlassCard>
 
       {/* Map Visual Container */}

@@ -1,66 +1,53 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
-import { EmergencyBanner } from '@/components/layout/EmergencyBanner';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { SafetyProfileModal } from '@/components/profile/SafetyProfileModal';
 import { AuthModal } from '@/components/auth/AuthModal';
-import Script from 'next/script';
+import { GlobalSafetyBar } from '@/components/layout/GlobalSafetyBar';
+import { SkipToContent } from '@/components/layout/SkipToContent';
+import { AccessibilityAnnouncer } from '@/components/layout/AccessibilityAnnouncer';
 
 export const metadata: Metadata = {
-  title: 'XTRACY — Trace. Analyze. Protect. | Cyber Intelligence & Personal Safety',
+  title: 'XTRACY — ANALYZE. UNDERSTAND. RESPOND.',
   description:
-    'Free public digital safety, cybersecurity intelligence, privacy awareness, emergency guidance, and women\'s safety platform.',
+    'Understand suspicious digital activity with privacy-focused cybersecurity analysis, global safety resources, and AI-guided recommendations.',
   manifest: '/manifest.json',
-  applicationName: 'XTRACY',
-  appleWebApp: {
-    capable: true,
-    title: 'XTRACY',
-    statusBarStyle: 'black-translucent',
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: '#070A12',
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen flex flex-col justify-between cyber-bg-grid bg-darkBg text-gray-100 antialiased selection:bg-brand-blue selection:text-white">
-        <EmergencyBanner />
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body className="font-sans min-h-screen bg-darkBg text-gray-100 flex flex-col selection:bg-brand-cyan/30 selection:text-brand-cyan">
+        {/* Keyboard Accessibility Skip Link */}
+        <SkipToContent />
+
+        {/* Screen Reader ARIA Live Announcer */}
+        <AccessibilityAnnouncer />
+
+        {/* Global Safety Bar */}
+        <GlobalSafetyBar />
+
+        {/* Global Header Navigation */}
         <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+
+        {/* Guest Authentication Modal */}
+        <AuthModal />
+
+        {/* Main Content Area */}
+        <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
           {children}
         </main>
-        <SafetyProfileModal />
-        <AuthModal />
-        <Footer />
 
-        {/* PWA Service Worker Registration */}
-        <Script id="register-sw" strategy="afterInteractive">
-          {`
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(
-                  function(registration) {
-                    console.log('XTRACY ServiceWorker registered:', registration.scope);
-                  },
-                  function(err) {
-                    console.log('XTRACY ServiceWorker registration failed:', err);
-                  }
-                );
-              });
-            }
-          `}
-        </Script>
+        {/* Global Footer */}
+        <Footer />
       </body>
     </html>
   );

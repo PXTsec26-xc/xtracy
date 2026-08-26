@@ -1,76 +1,77 @@
-# XTRACY API Documentation Reference
+# XTRACY REST API Documentation
 
-> **Initiative:** PXT sec26  
-> **Team:** Anshika Goswami, Harvi Patel, Dhruvi Solanki  
-
----
-
-## 1. Authentication API Endpoints (`/api/auth`)
-
-### `POST /api/auth/signup`
-- **Description**: Registers a new XTRACY user account with server-side password hashing.
-- **Request Body**:
-  ```json
-  {
-    "email": "user@domain.com",
-    "password": "Password123!",
-    "fullName": "Alex Morgan",
-    "userRole": "Everyday User"
-  }
-  ```
-- **Response (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "data": { "user": { "id": "user-123", "email": "user@domain.com" }, "token": "session-token-abc" }
-  }
-  ```
-
-### `POST /api/auth/login`
-- **Description**: Authenticates user credentials against PBKDF2 password hash.
-- **Request Body**: `{ "email": "user@domain.com", "password": "Password123!" }`
-
-### `GET /api/auth/me`
-- **Description**: Verifies session token header (`Authorization: Bearer <token>`).
+> **Base URL:** `/api`  
+> **Format:** JSON  
+> **Standard Response Schema:** `{ success: boolean, data?: T, error?: { code: string, message: string }, dataTrust?: { status: string, sourceName: string, lastRefreshed: string } }`
 
 ---
 
-## 2. Threat Intelligence APIs
+## 1. Flagship Tools Endpoints
 
-### `GET /api/threat-intelligence`
-- **Description**: Fetches live vulnerabilities from CISA Known Exploited Vulnerabilities JSON catalog with server caching and fallback.
+### A. URL Guard
+- **Endpoint:** `POST /api/tools/url-guard`
+- **Body:** `{ "url": "https://example.com/login" }`
+- **Output:** URL metrics (Shannon entropy, punycode, TLD), transparent scoring factor breakdown, calculated risk index (0-100), and optional multi-engine reputation stats.
 
-### `GET /api/cves?id=CVE-2024-XXXX`
-- **Description**: Looks up CVE details and technical remediation steps.
+### B. Domain & DNS Intelligence
+- **Endpoint:** `POST /api/tools/dns-intel`
+- **Body:** `{ "domain": "example.com" }`
+- **Output:** Live DNS zone records resolved via Node.js `dns.promises`: `A`, `AAAA`, `MX` (with priorities), `TXT` (SPF strings), `NS`, and `CNAME`.
 
-### `POST /api/scan`
-- **Description**: Runs defensive heuristic risk analysis on URLs, text samples, or email headers.
-- **Request Body**: `{ "content": "https://suspicious-bank-login.com", "inputType": "url" }`
+### C. Security Headers Audit
+- **Endpoint:** `POST /api/tools/header-analyzer`
+- **Body:** `{ "url": "https://example.com" }`
+- **Output:** Real HTTP response headers evaluation (`CSP`, `HSTS`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`), security score (0-100), grade (A+ to F), and copyable remediation directives.
 
----
-
-## 3. Community Threat Submissions APIs (`/api/submissions`)
-
-### `GET /api/submissions`
-- **Description**: Returns verified public community threat reports.
-
-### `POST /api/submissions`
-- **Description**: Submits a suspicious scam link or smishing SMS to the community verification queue.
-
----
-
-## 4. User Data Persistence APIs (`/api/user`)
-
-- `GET / POST / DELETE /api/user/scans`: Manage saved scan history.
-- `GET / POST / DELETE /api/user/bookmarks`: Manage bookmarked CVE advisories.
-- `GET / POST / DELETE /api/user/incidents`: Manage incident recovery cases.
-- `GET / POST / DELETE /api/user/vault`: Store and retrieve client-side WebCrypto encrypted vault notes ciphertext (`encryptedContent`, `iv`, `salt`).
-- `GET / DELETE /api/user/privacy`: Inspect stored profile data breakdown or execute full account data wipe.
+### D. Digital Footprint Checker
+- **Endpoint:** `POST /api/tools/footprint-checker`
+- **Body:** `{ "target": "username_or_domain", "queryType": "USERNAME" | "DOMAIN" }`
+- **Output:** Public developer/social profile presence matrix (GitHub, GitLab, Gravatar, Reddit, HackerNews, Dev.to) or domain public security posture.
 
 ---
 
-## 5. System Health & Diagnostics
+## 2. Additional Security API Endpoints
 
-- `GET /api/health`: System health monitor endpoint.
-- `GET /api/security-audit`: System security audit and integrity check endpoint.
-- `POST /api/assistant`: XTRACY Defensive AI Assistant endpoint supporting 3 reading modes.
+### E. Cryptographic Hash Utility
+- **Endpoint:** `POST /api/tools/hash-utility`
+- **Body:** `{ "text": "sample string", "secret": "optional_hmac_key", "compareHash": "optional_expected_hash" }`
+- **Output:** MD5, SHA-1, SHA-256, SHA-384, SHA-512, HMAC-SHA256, and checksum verification match boolean.
+
+### F. IP & CIDR Subnet Calculator
+- **Endpoint:** `POST /api/tools/ip-subnet`
+- **Body:** `{ "input": "192.168.1.50/24" }`
+- **Output:** Network address, broadcast address, subnet mask, wildcard mask, usable host pool, binary mask, and reverse DNS PTR.
+
+### G. SSL / TLS Certificate Inspector
+- **Endpoint:** `POST /api/tools/ssl-inspector`
+- **Body:** `{ "host": "example.com", "port": 443 }`
+- **Output:** TLS handshake details, Subject, Issuer CA, validity dates, days remaining, SANs, cipher suite, and SHA-256 fingerprints.
+
+### H. HTTP Response & Method Inspector
+- **Endpoint:** `POST /api/tools/http-inspector`
+- **Body:** `{ "url": "https://example.com", "method": "GET" | "HEAD" | "OPTIONS" }`
+- **Output:** Status code, response latency (ms), Content-Type, headers, and cookie security flags (`HttpOnly`, `Secure`, `SameSite`).
+
+### I. Security.txt Checker
+- **Endpoint:** `POST /api/tools/security-txt`
+- **Body:** `{ "domain": "example.com" }`
+- **Output:** RFC 9116 security.txt discovery status, Contact, Expires, Encryption, compliance score, and template generator.
+
+### J. Robots.txt Inspector
+- **Endpoint:** `POST /api/tools/robots-txt`
+- **Body:** `{ "domain": "example.com" }`
+- **Output:** User-agent directives, Disallow/Allow lists, Sitemaps, and sensitive path leak detection heuristics.
+
+### K. Email Security (SPF & DMARC)
+- **Endpoint:** `POST /api/tools/email-security`
+- **Body:** `{ "domain": "example.com" }`
+- **Output:** SPF record, DMARC policy (`p=reject/quarantine/none`), aggregate reporting, and anti-spoofing rating.
+
+---
+
+## 3. AI Copilot Endpoint
+
+### L. XTRACY AI Copilot
+- **Endpoint:** `POST /api/assistant`
+- **Body:** `{ "query": "How do I configure CSP headers?", "readingMode": "Beginner" | "Student" | "Professional" }`
+- **Output:** Generated defensive cybersecurity guidance, provider name, and live/standby mode indicator.

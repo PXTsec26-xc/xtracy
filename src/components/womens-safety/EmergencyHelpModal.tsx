@@ -97,7 +97,7 @@ export const EmergencyHelpModal: React.FC<{ onClose: () => void }> = ({ onClose 
             </div>
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                "I Need Help Now" — Immediate Emergency Guidance
+                &quot;I Need Help Now&quot; — Immediate Emergency Guidance
               </h2>
               <p className="text-xs text-gray-300">
                 Discreet digital safety triage. Select a situation to view calm, private defensive steps.

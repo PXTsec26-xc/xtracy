@@ -1,52 +1,43 @@
-# XTRACY Milestone Changelog
+# XTRACY Changelog
 
-> **Initiative:** PXT sec26  
-> **Team:** Anshika Goswami, Harvi Patel, Dhruvi Solanki  
+All notable changes to the XTRACY Cybersecurity Intelligence Platform are documented in this file.
 
 ---
 
-## 📅 Version 1.0.0 Milestone Summary
+## [2.0.0] - 2026-08-25 (Production Platform Release)
 
-### Phase 1: Core Architecture & Visual Foundation
-- Created Next.js 14 App Router project with XTRACY Intelligent Glass Grid design system.
-- Configured 3 theme modes (Dark Glass, Light Glass, Emergency Focus).
-- Created Web Crypto API AES-GCM encryption engine, Personal Relevance Engine, Scam Rules Engine, and Preparedness Score Calculator.
-- Implemented 10 core routes (`/`, `/dashboard`, `/scan`, `/emergency`, `/womens-safety`, `/safe-vault`, `/intelligence`, `/threat-map`, `/assistant`, `/privacy`).
+### 🚀 Flagship Tools Implementation
+- **XTRACY URL Guard (`/tools/url-guard`)**: Built complete URL analysis engine with Shannon entropy scoring, punycode/IDN detection, suspicious TLD profiling, executable extension detection, and transparent factor breakdown.
+- **Domain & DNS Intelligence (`/tools/dns-intel`)**: Built server-side live DNS resolver using Node.js `dns.promises` supporting A, AAAA, MX, TXT (SPF), NS, and CNAME records with posture insights.
+- **Security Headers Audit (`/tools/header-analyzer`)**: Replaced mock logic with real SSRF-protected HTTP response header assessment (`CSP`, `HSTS`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) with grading, score, and copyable remediation directives.
+- **Digital Footprint Checker (`/tools/footprint-checker`)**: Built defensive public OSINT analyzer inspecting handles and domains across public developer and community endpoints.
 
-### Phase 2A: Real Intelligence, Backend & India Safety Integration
-- Created 8 Next.js API Route Handlers (`/api/health`, `/api/threat-intelligence`, `/api/cves`, `/api/security-news`, `/api/scan`, `/api/resources`, `/api/emergency`, `/api/safety`).
-- Integrated CISA Known Exploited Vulnerabilities (KEV) live JSON feed with server caching and fallback.
-- Created Data Trust System badges (`● LIVE`, `● CACHED`, `● FALLBACK`, `● DEMO`).
-- Created India Emergency Response Contact Center (112, 181, 100, 1930).
+### 🛠️ Complete Modular Security Tool Suite (18 Working Tools)
+- Added **Password Health & Entropy Lab** (`/tools/password-lab`) with bit entropy math, brute-force crack time estimates, and Diceware passphrase generator.
+- Added **Cryptographic Hash Generator & Verifier** (`/tools/hash-utility`) with SHA-256, SHA-512, SHA-384, SHA-1, MD5, HMAC-SHA256, and checksum matcher.
+- Added **Base64, Hex & URL Encoder/Decoder** (`/tools/encoder-decoder`) with client-side UTF-8 bidirectional conversion.
+- Added **JWT Token Inspector** (`/tools/jwt-inspector`) with claim expiration countdown, algorithm flaw detection, and signature verification.
+- Added **IP & CIDR Subnet Calculator** (`/tools/ip-subnet`) with IP classification, usable host formulas, and reverse DNS PTR lookups.
+- Added **SSL / TLS Certificate Inspector** (`/tools/ssl-inspector`) with live Node.js TLS handshake (`tls.connect`), CA issuer inspection, SANs, and validity meter.
+- Added **HTTP Method & Response Inspector** (`/tools/http-inspector`) with cookie security attribute auditing (`HttpOnly`, `Secure`, `SameSite`).
+- Added **Security.txt Checker** (`/tools/security-txt`) with RFC 9116 compliance validation and template generator.
+- Added **Robots.txt Inspector** (`/tools/robots-txt`) with crawler directive parser and sensitive administrative path leak detector.
+- Added **Email Security Analyzer** (`/tools/email-security`) with SPF, DMARC, and DKIM DNS record audits.
+- Added **File Hash & Integrity Inspector** (`/tools/file-inspector`) with client WebCrypto streaming SHA-256/SHA-512 hashing.
+- Added **Cybersecurity Report Generator** (`/tools/report-generator`) with structured Markdown and printable executive report builder.
+- Added **Defensive Security Checklists** (`/tools/security-checklist`) with OWASP web app, cloud, and endpoint hardening checklists.
+- Added **Incident Response Notes Workspace** (`/tools/incident-notes`) with structured timeline and triage action logging.
 
-### Phase 2B: Authentication, User Accounts & Security Profiles
-- Built 7 authentication routes (`/login`, `/signup`, `/forgot-password`, `/reset-password`, `/verify-email`, `/profile`, `/settings/security`).
-- Created server-side password hashing (SHA-256 + Salt PBKDF2) and token management.
-- Implemented Guest Mode vs Authenticated User Mode with `ProtectedRoute` and `AuthModal`.
-- Configured PWA manifest (`public/manifest.json`).
+### 🛡️ Security Hardening & SSRF Protections
+- Enhanced `src/lib/ssrfProtection.ts` with asynchronous DNS pre-resolution checking to block DNS rebinding attacks.
+- Enforced strict destination restrictions blocking RFC 1918 private subnets, loopbacks (`127.0.0.0/8`, `::1`), and cloud metadata (`169.254.169.254`).
+- Implemented request timeouts and abort controllers on all external server fetches.
 
-### Phase 2C: Real Database, Data Persistence & Privacy Control
-- Defined production PostgreSQL Prisma ORM schema in `prisma/schema.prisma`.
-- Built data persistence API routes (`/api/user/scans`, `/api/user/bookmarks`, `/api/user/incidents`, `/api/user/vault`, `/api/user/privacy`).
-- Created Data Storage Status Badges (`● PERSISTENT`, `● LOCAL`, `● TEMPORARY`, `● UNAVAILABLE`).
-- Built User Privacy & Data Control Center (`/privacy-control`).
+### 🤖 AI Copilot Architecture
+- Implemented multi-provider architecture in `src/lib/server/aiProvider.ts` supporting Google Gemini and OpenAI.
+- Added transparent standby mode with deterministic defensive rule engine when API keys are unconfigured.
+- Added defensive safety guardrails refusing unauthorized hacking or exploit generation queries.
 
-### Phase 3: Community Submissions & Defensive AI Assistant
-- Built `/submit-threat` page & `CommunitySubmissionForm` for crowdsourced threat reporting.
-- Built `/community-feed` public threat directory.
-- Upgraded `/assistant` and `/api/assistant` with defensive AI guardrails and 3 reading modes (Beginner, Student, Professional).
-
-### Phase 4: PWA Offline Service Worker & Security Hardening
-- Created `public/sw.js` caching emergency numbers (112, 181, 100, 1930) and triage flows for offline access.
-- Built `/api/security-audit` endpoint and configured security headers in `next.config.mjs`.
-
-### Phase 5 & Phase 6: Power Platform, Command Center & Risk Engine
-- Built Unified Security Command Center on `/dashboard` with Smart Risk Engine (`src/lib/riskEngine.ts`).
-- Built Digital Footprint Tracker (`/privacy-footprint` & `/api/footprint`).
-- Built Incident Case Vault Workspace (`/case-vault` & `/api/cases`).
-- Built Educational Cybersecurity Simulations (`/learning`).
-- Built In-App Alert Center (`/alerts` & `/api/alerts`).
-
-### Phase 7: Final System Integration, QA & Academic Documentation Package
-- Completed final platform integration test across all 51 routes with **0 build errors**.
-- Created 10 academic documentation files crediting team members Anshika Goswami, Harvi Patel, and Dhruvi Solanki under initiative PXT sec26.
+### 🧪 Automated Testing
+- Created automated unit and defensive security test suite in `scripts/test-suite.mjs` (`npm run test`).
+- Verified 100% clean Next.js 14 production build (102 routes).

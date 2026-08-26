@@ -21,7 +21,7 @@ export default function WomensSafetyPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-black text-white flex items-center gap-2">
               <Heart className="w-7 h-7 text-purple-400" />
-              Women's Safety & Privacy Center
+              Women&apos;s Safety & Privacy Center
             </h1>
             <Badge type="productStatus" value="100% PRIVATE & LOCAL" size="sm" />
           </div>

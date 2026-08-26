@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { AISecurityAssistant } from '@/components/assistant/AISecurityAssistant';
 import { Badge } from '@/components/ui/Badge';
 import { Sparkles } from 'lucide-react';
@@ -16,14 +16,16 @@ export default function AssistantPage() {
             <Sparkles className="w-8 h-8 text-brand-cyan" />
             XTRACY AI Security Assistant
           </h1>
-          <Badge type="productStatus" value="WORKING DEFENSIVE AI" size="sm" />
+          <Badge type="productStatus" value="DEFENSIVE AI COPILOT" size="sm" />
         </div>
         <p className="text-xs text-gray-400">
-          Interactive defensive assistant for explaining CVEs, clarifying security patches, detecting scam indicators, and guiding account recovery.
+          Interactive defensive copilot for interpreting tool findings, diagnosing security headers, explaining DNS records, and guiding incident recovery.
         </p>
       </div>
 
-      <AISecurityAssistant />
+      <Suspense fallback={<div className="p-8 text-center text-xs text-gray-400">Loading XTRACY AI Copilot...</div>}>
+        <AISecurityAssistant />
+      </Suspense>
     </div>
   );
 }

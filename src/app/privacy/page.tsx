@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             1. Zero Unnecessary Data Collection
           </h3>
           <p className="text-gray-300">
-            XTRACY does not track user identities, require user account registration for basic use, or collect personal identifiers. Your digital safety profile, selected operating systems, email providers, and social media platforms are stored purely in your browser's local Web Storage.
+            XTRACY does not track user identities, require user account registration for basic use, or collect personal identifiers. Your digital safety profile, selected operating systems, email providers, and social media platforms are stored purely in your browser&apos;s local Web Storage.
           </p>
         </div>
 

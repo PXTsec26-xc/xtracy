@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       data: payload,
       dataTrust: {
         status: payload.isAiGenerated ? 'LIVE' : 'CACHED',
-        sourceName: payload.providerName,
+        sourceName: payload.providerName || 'XTRACY Defensive AI Engine',
         lastRefreshed: new Date().toISOString(),
       },
     });

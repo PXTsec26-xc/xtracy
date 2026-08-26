@@ -16,7 +16,7 @@ export default function EmergencyPage() {
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-black text-white flex items-center gap-2">
             <AlertTriangle className="w-8 h-8 text-red-500" />
-            Cyber Emergency Response Center ("I Think I've Been Hacked")
+            Cyber Emergency Response Center (&quot;I Think I&apos;ve Been Hacked&quot;)
           </h1>
           <Badge type="productStatus" value="WORKING TRIAGE" size="sm" />
         </div>

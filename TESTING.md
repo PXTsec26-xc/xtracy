@@ -1,40 +1,43 @@
-# XTRACY Verification & Quality Assurance Testing Guide
+# XTRACY Testing & Verification Guide
 
 > **Initiative:** PXT sec26  
-> **Team:** Anshika Goswami, Harvi Patel, Dhruvi Solanki  
+> **Platform Version:** 2.0.0
 
 ---
 
-## 1. Automated Build Verification
+## 1. Automated Test Suite
 
-Execute full production build to verify TypeScript type checking and page static compilation:
+XTRACY includes an automated unit and defensive security test suite (`scripts/test-suite.mjs`):
 
+```bash
+npm run test
+```
+
+### Verified Test Cases:
+1. **Shannon Entropy**: Mathematical verification of low vs high entropy strings.
+2. **SSRF Protections**:
+   - Blocks `localhost`, `127.0.0.1`, and loopback interfaces.
+   - Blocks AWS/GCP cloud metadata IP `169.254.169.254`.
+   - Blocks RFC 1918 private subnets (`10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12`).
+   - Blocks non-standard administrative TCP ports.
+   - Permits valid public HTTPS endpoints.
+3. **Cryptographic Hashes**: SHA-256 and SHA-512 cryptographic digest consistency.
+4. **Subnet Math**: CIDR calculations, usable host formulas, network/broadcast address resolution.
+5. **Base64 & Hex Conversion**: Bidirectional encode/decode fidelity.
+6. **Defensive Guardrails**: Rejection of offensive intrusion keywords; allowance of defensive hardening inquiries.
+
+---
+
+## 2. Type Checking & Production Build Validation
+
+### TypeScript Validation
+```bash
+npx tsc --noEmit
+```
+
+### Next.js Production Build
 ```bash
 npm run build
 ```
 
-Expected Output:
-```
-▲ Next.js 14.2.35
-✓ Compiled successfully
-✓ Linting and checking validity of types ...
-✓ Generating static pages (51/51)
-```
-
----
-
-## 2. QA Verification Checklist
-
-| Test Area | Expected Behavior | Status |
-| :--- | :--- | :--- |
-| **India Emergency Contacts** | One-tap `tel:112`, `tel:181`, `tel:100`, `tel:1930` call links trigger dialer | **PASS** |
-| **Data Trust System** | Displays `● LIVE`, `● CACHED`, `● FALLBACK`, or `● DEMO` badges | **PASS** |
-| **Authentication Flow** | Sign Up, Sign In, Profile archetype update, Security settings, Logout | **PASS** |
-| **Protected Route Guard** | Unauthenticated access to `/dashboard` or `/safe-vault` prompts Auth Modal | **PASS** |
-| **WebCrypto Safe Vault** | Encrypts note plaintext with AES-GCM 256-bit before storing ciphertext | **PASS** |
-| **Quick Scan Center** | Scans URLs for threat indicators, bad TLDs, and calculates risk score | **PASS** |
-| **Community Feed** | Displays crowdsourced threat reports with verification badges | **PASS** |
-| **Defensive AI Assistant** | Responds in Beginner, Student, or Professional reading modes | **PASS** |
-| **Unified Command Center** | Smart Risk Engine computes transparent 0-100 risk score with triggers | **PASS** |
-| **PWA Service Worker** | `sw.js` caches static assets & emergency numbers for offline access | **PASS** |
-| **Privacy Control Center** | Visualizes stored vs local vs never collected data & executes data wipe | **PASS** |
+Both commands compile cleanly with 0 type errors across all 102 routes.

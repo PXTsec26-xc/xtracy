@@ -1,8 +1,8 @@
-# XTRACY — Personal Safety & Cyber Intelligence Platform
+# XTRACY — Production Cybersecurity & Intelligence Platform
 
-> **Tagline:** Trace. Analyze. Protect.  
+> **Tagline:** ANALYZE. UNDERSTAND. RESPOND.  
 > **Initiative:** PXT sec26  
-> **Project Concept:** Free, Privacy-First Public Digital Safety & Cybersecurity Intelligence Platform  
+> **Mission:** Production-oriented defensive cybersecurity workspace, threat intelligence, and zero-knowledge privacy platform.
 
 ---
 
@@ -18,29 +18,65 @@
 
 ## 🌟 Executive Summary
 
-**XTRACY** is a free public digital safety, cybersecurity intelligence, privacy awareness, emergency guidance, and women's safety platform built for ordinary people, students, professionals, and cybersecurity learners.
+**XTRACY** is a production cybersecurity and security intelligence workspace. It bridges the gap between raw threat data and actionable defensive remediation for everyday users, IT administrators, students, and ethical cybersecurity analysts.
 
-The central mission of XTRACY is:
-> *"A global threat should become a clear, personalized action for the individual."*
-
-Instead of merely reporting that a vulnerability, scam, or data breach occurred, XTRACY answers:
-- **Does this affect me?** (Personal Relevance Engine matching user device footprint)
-- **How serious is it?** (Risk Meter & Data Trust System)
-- **What should I do right now?** (3-Tier Explanations: Beginner, Student, Professional)
-- **Where can I get official help if I am in danger?** (India Emergency Contact Center: 112, 181, 100, 1930)
+Every tool and feature in XTRACY is built around **100% real logic**:
+- **Real Server-Side Resolvers**: Node.js DNS promises, live TLS certificate handshakes, and SSRF-protected HTTP response header auditors.
+- **Client-Side WebCrypto Privacy**: Passphrase entropy, local Diceware generators, and streaming binary file SHA-256/SHA-512 hashing executed 100% in browser memory with zero server upload.
+- **Honest AI State Awareness**: Operates seamlessly with live Google Gemini / OpenAI models when configured, or transparently drops back to the built-in deterministic defensive rule engine in standby mode.
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Top 4 Flagship Tools
 
-- **Framework**: Next.js 14 App Router (`TypeScript`, `React 18`)
-- **Styling & Theme**: Vanilla CSS + Tailwind CSS (XTRACY Dark Intelligent Glass Grid Architecture)
-- **State Management**: Zustand (Persistent Local Storage Middleware)
-- **Client Encryption**: Web Crypto API (AES-GCM 256-bit with PBKDF2 passphrase key derivation)
-- **Database & Persistence Layer**: Prisma ORM with PostgreSQL schema (Server-side abstraction with local dev memory fallback)
-- **Live Intelligence Feeds**: CISA Known Exploited Vulnerabilities (KEV) public JSON dataset fetcher with server-side caching & fallback store
-- **PWA & Offline Capability**: Service Worker (`public/sw.js`) caching emergency numbers (112, 181, 100, 1930) and incident decision flows
-- **AI Integration**: XTRACY Defensive AI Assistant (`src/lib/server/aiProvider.ts` with API key abstraction & built-in Defensive Cyber Safety Rule Engine)
+1. **XTRACY URL Guard** (`/tools/url-guard`)
+   - Real URL format validation, protocol detection, Shannon entropy calculations, punycode/IDN homograph detection, high-risk TLD profiling, and transparent heuristic factor scoring.
+   - Safe reputation API integration (`VIRUSTOTAL_API_KEY`, `SAFE_BROWSING_API_KEY`) with transparent configuration indicators.
+
+2. **Domain & DNS Intelligence** (`/tools/dns-intel`)
+   - Authoritative live DNS record lookups (A, AAAA, MX, TXT, NS, CNAME) via Node.js `dns.promises`.
+   - Domain normalization, error handling (`NXDOMAIN`, `NODATA`), and DNS security configuration insights.
+
+3. **Security Headers Audit** (`/tools/header-analyzer`)
+   - SSRF-protected live HTTP fetch evaluating `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy`.
+   - Generates transparent security score, detects information leakage headers, and provides copyable remediation directives.
+
+4. **Digital Footprint Checker** (`/tools/footprint-checker`)
+   - Defensive public OSINT analysis for handles and domain presence across known public developer and community endpoints without private scraping.
+
+---
+
+## 🛠️ Complete Modular Tool Suite (18 Working Tools)
+
+| Tool Name | Route | Technology & Privacy Guarantee |
+| :--- | :--- | :--- |
+| **URL Guard** | `/tools/url-guard` | Heuristic engine + Entropy + Multi-engine reputation |
+| **DNS Intelligence** | `/tools/dns-intel` | Server-side Node.js `dns.promises` resolver |
+| **Security Headers Audit** | `/tools/header-analyzer` | Live SSRF-protected HTTP header evaluator |
+| **Digital Footprint Checker** | `/tools/footprint-checker` | Defensive public OSINT engine |
+| **Password Health & Entropy** | `/tools/password-lab` | 100% Browser Local bit entropy & Diceware generator |
+| **Hash Generator & Verifier** | `/tools/hash-utility` | NIST SHA-256, SHA-512, SHA-384, SHA-1, MD5, HMAC |
+| **Base64, Hex & URL Encoder** | `/tools/encoder-decoder` | Bidirectional client-side UTF-8 conversion |
+| **JWT Token Inspector** | `/tools/jwt-inspector` | Client-side claim expiration debugger & algorithm audits |
+| **IP & Subnet Calculator** | `/tools/ip-subnet` | IPv4/IPv6 classification, CIDR math, Reverse DNS PTR |
+| **SSL/TLS Certificate Inspector**| `/tools/ssl-inspector` | Live Node.js TLS handshake (`tls.connect`) analyzer |
+| **HTTP Method Inspector** | `/tools/http-inspector` | GET/HEAD/OPTIONS tester & Cookie security audit |
+| **Security.txt Checker** | `/tools/security-txt` | RFC 9116 security.txt parser & template generator |
+| **Robots.txt Inspector** | `/tools/robots-txt` | Crawler directive parser & path leak detector |
+| **Email Security (SPF/DMARC)** | `/tools/email-security` | DNS TXT parser for SPF, DMARC, and DKIM policies |
+| **File Hash & Integrity** | `/tools/file-inspector` | Client-side WebCrypto SHA-256/SHA-512 streaming hash |
+| **Report Generator** | `/tools/report-generator` | Audit report builder with Markdown and print export |
+| **Defensive Checklists** | `/tools/security-checklist` | Interactive hardening checklists (OWASP, Cloud, Endpoints) |
+| **Incident Notes Workspace** | `/tools/incident-notes` | Structured incident triage logger & timeline manager |
+
+---
+
+## 🤖 XTRACY AI Copilot
+
+- **Live Generative AI**: Supports Google Gemini API (`GEMINI_API_KEY`) and OpenAI (`OPENAI_API_KEY`).
+- **Standby Mode**: When unconfigured, operates honestly on a deterministic defensive rule engine without pretending to hallucinate AI responses.
+- **Reading Levels**: Beginner (analogy-driven), Student (cybersecurity concepts), and Professional (RFCs, CVEs, MITRE ATT&CK mappings).
+- **Strict Guardrails**: Refuses offensive exploit generation, malware creation, or unauthorized intrusion assistance.
 
 ---
 
@@ -50,23 +86,42 @@ Instead of merely reporting that a vulnerability, scam, or data breach occurred,
 - Node.js 18.x or 20.x installed
 - npm / yarn / pnpm
 
-### Installation
+### Installation & Run
 
 ```bash
-# Clone or navigate to project directory
+# 1. Clone repository
+git clone https://github.com/your-org/xtracy.git
 cd xtracy
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Run development server
+# 3. (Optional) Configure environment variables in .env
+cp .env.example .env
+
+# 4. Run automated test suite
+npm run test
+
+# 5. Run development server
 npm run dev
+
+# 6. Production build
+npm run build
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) (or `http://localhost:3005`) in your web browser.
+Access the platform at [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 🔒 Security Architecture
+
+- **SSRF Protection**: Asynchronous DNS pre-resolution blocks loopback (`127.0.0.0/8`), private RFC 1918 subnets, cloud metadata (`169.254.169.254`), and non-standard administrative ports.
+- **Rate Limiting**: In-memory token bucket rate limiters on all public API routes.
+- **Production Headers**: Strict CSP, HSTS, X-Content-Type-Options: nosniff, and X-Frame-Options: DENY in `next.config.mjs`.
 
 ---
 
 ## 📄 License & Attribution
 
-Developed under the **PXT sec26** initiative by Anshika Goswami, Harvi Patel, and Dhruvi Solanki for educational, academic demonstration, and public safety awareness purposes.
+Developed under the **PXT sec26** initiative by Anshika Goswami, Harvi Patel, and Dhruvi Solanki.

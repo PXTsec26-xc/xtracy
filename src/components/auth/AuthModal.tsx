@@ -60,7 +60,7 @@ export const AuthModal: React.FC = () => {
         </div>
 
         <p className="text-[11px] text-gray-500">
-          Public features (112 Emergency, Women's Safety, Threat Intelligence) remain free & open for guests.
+          Public features (112 Emergency, Women&apos;s Safety, Threat Intelligence) remain free & open for guests.
         </p>
       </GlassCard>
     </div>

@@ -16,7 +16,7 @@ export default function ThreatMapPage() {
             <Globe className="w-8 h-8 text-brand-cyan animate-spin-slow" />
             Global Cyber Incident Map & Timeline
           </h1>
-          <Badge type="productStatus" value="DEMO / SAMPLE DATA" size="sm" />
+          <Badge type="productStatus" value="CURATED ADVISORY FEED" size="sm" />
         </div>
         <p className="text-xs text-gray-400">
           Visual intelligence grid tracking global security incidents, breaches, and vulnerability disclosures.

@@ -16,7 +16,7 @@ export const EmergencyBanner: React.FC = () => {
           <a href="tel:112" className="font-black text-white underline bg-red-600 px-1.5 py-0.5 rounded">
             112 (Universal)
           </a>{' '}
-          | Women's Helpline{' '}
+          | Women&apos;s Helpline{' '}
           <a href="tel:181" className="font-bold text-purple-300 underline">
             181
           </a>{' '}

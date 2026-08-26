@@ -74,7 +74,7 @@ export const SafetyProfileModal: React.FC = () => {
                 <Badge type="productStatus" value="LOCAL ONLY" size="sm" />
               </h2>
               <p className="text-xs text-gray-400">
-                Select your devices, apps, and services to customize your "Does This Affect Me?" personal relevance engine.
+                Select your devices, apps, and services to customize your &quot;Does This Affect Me?&quot; personal relevance engine.
               </p>
             </div>
           </div>
