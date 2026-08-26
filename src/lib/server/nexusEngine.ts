@@ -41,9 +41,42 @@ export interface NexusResult {
   dataSourceStatus: string;
 }
 
-/**
- * Deterministically classify input string
- */
+const TARGETED_BRANDS = [
+  { name: 'PayPal', keyword: 'paypal', officialDomain: 'paypal.com' },
+  { name: 'Bank of America', keyword: 'bankofamerica', officialDomain: 'bankofamerica.com' },
+  { name: 'Chase Bank', keyword: 'chase', officialDomain: 'chase.com' },
+  { name: 'Wells Fargo', keyword: 'wellsfargo', officialDomain: 'wellsfargo.com' },
+  { name: 'Apple', keyword: 'apple', officialDomain: 'apple.com' },
+  { name: 'Microsoft', keyword: 'microsoft', officialDomain: 'microsoft.com' },
+  { name: 'Google', keyword: 'google', officialDomain: 'google.com' },
+  { name: 'Amazon', keyword: 'amazon', officialDomain: 'amazon.com' },
+  { name: 'Netflix', keyword: 'netflix', officialDomain: 'netflix.com' },
+  { name: 'Facebook / Meta', keyword: 'facebook', officialDomain: 'facebook.com' },
+  { name: 'Instagram', keyword: 'instagram', officialDomain: 'instagram.com' },
+  { name: 'Binance', keyword: 'binance', officialDomain: 'binance.com' },
+  { name: 'Coinbase', keyword: 'coinbase', officialDomain: 'coinbase.com' },
+  { name: 'Stripe', keyword: 'stripe', officialDomain: 'stripe.com' },
+];
+
+const SECURITY_LOGIN_KEYWORDS = [
+  'secure',
+  'security',
+  'login',
+  'signin',
+  'auth',
+  'verify',
+  'verification',
+  'account',
+  'update',
+  'credential',
+  'banking',
+  'service',
+  'support',
+  'alert',
+  'billing',
+  'confirm',
+];
+
 export function classifyInput(input: string): InputClassification {
   const trimmed = input.trim();
 
@@ -66,13 +99,10 @@ export function classifyInput(input: string): InputClassification {
   const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/;
   if (domainRegex.test(trimmed)) return 'DOMAIN';
 
-  // Default: Scam Message Text
+  // Default: Scam Text
   return 'SCAM_TEXT';
 }
 
-/**
- * Execute unified Nexus Analysis with explainable score calculation
- */
 export async function analyzeNexusInput(input: string): Promise<NexusResult> {
   const classification = classifyInput(input);
   const factors: FactorBreakdown[] = [];
@@ -80,11 +110,11 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
   const threatIndicators: string[] = [];
   const recommendations: string[] = [];
 
-  let baseScore = 50; // Neutral baseline
+  let baseScore = 20; // Baseline low risk
 
   if (classification === 'URL' || classification === 'DOMAIN') {
     const rawUrl = classification === 'DOMAIN' ? `https://${input.trim()}` : input.trim();
-    
+
     // SSRF Check
     const ssrfResult = validateUrlForSSRF(rawUrl);
     if (!ssrfResult.allowed) {
@@ -94,7 +124,7 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
         riskLevel: 'HIGH_RISK',
         riskScore: 95,
         factors: [
-          { type: 'NEGATIVE', points: +45, description: `SSRF Violation: ${ssrfResult.reason}` },
+          { type: 'NEGATIVE', points: +75, description: `SSRF Violation: ${ssrfResult.reason}` },
         ],
         findings: [
           { category: 'SSRF_PROTECTION', severity: 'CRITICAL', detail: `Blocked internal or loopback IP range (${ssrfResult.reason})` },
@@ -109,11 +139,27 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
 
     try {
       const parsedUrl = new URL(rawUrl);
+      const hostname = parsedUrl.hostname.toLowerCase();
+      const pathname = parsedUrl.pathname.toLowerCase();
 
-      // HTTPS Check
+      // Reserved Test TLD Check (.example, .test, .invalid, .localhost)
+      const isTestTld =
+        hostname.endsWith('.example') ||
+        hostname.endsWith('.test') ||
+        hostname.endsWith('.invalid') ||
+        hostname.endsWith('.localhost');
+
+      if (isTestTld) {
+        factors.push({
+          type: 'POSITIVE',
+          points: 0,
+          description: `Reserved Test TLD Notice (RFC 2606): Host '${hostname}' is non-routable for testing, but structure is analyzed for simulated phishing indicators.`,
+        });
+      }
+
+      // 1. HTTPS Transport
       if (parsedUrl.protocol === 'https:') {
-        baseScore -= 15;
-        factors.push({ type: 'POSITIVE', points: -15, description: 'HTTPS transport protocol active' });
+        factors.push({ type: 'POSITIVE', points: -10, description: 'HTTPS transport protocol active' });
       } else {
         baseScore += 20;
         factors.push({ type: 'NEGATIVE', points: +20, description: 'Unencrypted HTTP protocol in use' });
@@ -121,36 +167,59 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
         threatIndicators.push('Unencrypted HTTP transport');
       }
 
-      // Subdomain & Homograph Checks
-      const subdomains = parsedUrl.hostname.split('.');
-      if (subdomains.length > 3) {
-        baseScore += 15;
-        factors.push({ type: 'NEGATIVE', points: +15, description: 'Excessive subdomain depth (>3 levels)' });
-        findings.push({ category: 'URL_STRUCTURE', severity: 'MEDIUM', detail: 'High subdomain count commonly associated with phishing lures.' });
+      // 2. Brand Impersonation Check
+      for (const brand of TARGETED_BRANDS) {
+        if (hostname.includes(brand.keyword) && !hostname.endsWith(`.${brand.officialDomain}`) && hostname !== brand.officialDomain) {
+          baseScore += 35;
+          factors.push({ type: 'NEGATIVE', points: +35, description: `Brand Impersonation Lure: Domain contains '${brand.name}' on unofficial domain ('${hostname}')` });
+          findings.push({ category: 'BRAND_IMPERSONATION', severity: 'HIGH', detail: `Domain '${hostname}' contains brand keyword '${brand.name}' without official domain ownership.` });
+          threatIndicators.push(`Brand impersonation lure (${brand.name})`);
+          break;
+        }
       }
 
-      if (parsedUrl.hostname.startsWith('xn--')) {
+      // 3. Security / Account Verification Keywords
+      const matchedDomainKeywords = SECURITY_LOGIN_KEYWORDS.filter((kw) => hostname.includes(kw));
+      const matchedPathKeywords = SECURITY_LOGIN_KEYWORDS.filter((kw) => pathname.includes(kw));
+
+      if (matchedDomainKeywords.length > 0 || matchedPathKeywords.length > 0) {
+        const allKeywords = Array.from(new Set([...matchedDomainKeywords, ...matchedPathKeywords]));
         baseScore += 25;
-        factors.push({ type: 'NEGATIVE', points: +25, description: 'Punycode / Homograph domain structure detected' });
+        factors.push({ type: 'NEGATIVE', points: +25, description: `Account verification keywords detected in URL (${allKeywords.map((k) => `'${k}'`).join(', ')})` });
+        findings.push({ category: 'SOCIAL_ENGINEERING', severity: 'HIGH', detail: `URL contains sensitive verification keywords (${allKeywords.join(', ')}) commonly used in phishing lures.` });
+        threatIndicators.push('Credential lure keyword pattern');
+      }
+
+      // 4. Deceptive Hyphenation
+      const hyphenCount = (hostname.match(/-/g) || []).length;
+      if (hyphenCount >= 2) {
+        baseScore += 15;
+        factors.push({ type: 'NEGATIVE', points: +15, description: `Deceptive Hyphenated Domain Pattern (${hyphenCount} hyphens: '${hostname}')` });
+        findings.push({ category: 'URL_STRUCTURE', severity: 'MEDIUM', detail: 'Domain uses excessive hyphenation to mimic corporate subdomains.' });
+      }
+
+      // 5. Excessive Subdomain Depth
+      const subdomains = hostname.split('.');
+      if (subdomains.length > 3 && !isTestTld) {
+        baseScore += 15;
+        factors.push({ type: 'NEGATIVE', points: +15, description: 'Excessive subdomain depth (>3 levels)' });
+        findings.push({ category: 'URL_OBFUSCATION', severity: 'MEDIUM', detail: 'High subdomain count obfuscates the true destination host.' });
+      }
+
+      // 6. Punycode Check
+      if (hostname.startsWith('xn--')) {
+        baseScore += 30;
+        factors.push({ type: 'NEGATIVE', points: +30, description: 'Punycode / Homograph domain structure detected' });
         findings.push({ category: 'HOMOGRAPH_ATTACK', severity: 'HIGH', detail: 'Domain uses Punycode encoding to mimic trusted brands.' });
         threatIndicators.push('Punycode lookalike domain');
       }
 
-      // Known Shortener Detection
+      // 7. Shortener Check
       const shorteners = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'is.gd', 'buff.ly', 'ow.ly'];
-      if (shorteners.some((s) => parsedUrl.hostname.toLowerCase().includes(s))) {
+      if (shorteners.some((s) => hostname.includes(s))) {
         baseScore += 15;
         factors.push({ type: 'NEGATIVE', points: +15, description: 'URL Shortener service detected (Destination obfuscated)' });
         findings.push({ category: 'URL_OBFUSCATION', severity: 'MEDIUM', detail: 'Shortened URL obscures original target destination.' });
-      }
-
-      // Phishing Keyword Inspection
-      const phishingLures = ['verify', 'secure', 'update-account', 'banking-login', 'claim-reward', 'blocked-card', 'crypto-bonus'];
-      if (phishingLures.some((l) => rawUrl.toLowerCase().includes(l))) {
-        baseScore += 20;
-        factors.push({ type: 'NEGATIVE', points: +20, description: 'Phishing keyword pattern in URL string' });
-        findings.push({ category: 'SOCIAL_ENGINEERING', severity: 'HIGH', detail: 'URL contains high-risk credential harvesting or urgency keywords.' });
-        threatIndicators.push('Credential lure keyword pattern');
       }
 
     } catch (err) {
@@ -162,23 +231,20 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
   } else if (classification === 'SCAM_TEXT' || classification === 'EMAIL') {
     const textLower = input.toLowerCase();
 
-    // Urgency Tactics
-    if (textLower.includes('immediately') || textLower.includes('24 hours') || textLower.includes('urgent') || textLower.includes('suspended')) {
-      baseScore += 20;
-      factors.push({ type: 'NEGATIVE', points: +20, description: 'High urgency or fear pressure tactic detected' });
+    if (textLower.includes('immediately') || textLower.includes('24 hours') || textLower.includes('account blocked') || textLower.includes('suspended')) {
+      baseScore += 25;
+      factors.push({ type: 'NEGATIVE', points: +25, description: 'Artificial urgency or account suspension pressure' });
       findings.push({ category: 'PSYCHOLOGICAL_PRESSURE', severity: 'MEDIUM', detail: 'Message creates artificial urgency to force hasty action.' });
       threatIndicators.push('Artificial urgency pressure');
     }
 
-    // Financial & OTP Lures
     if (textLower.includes('otp') || textLower.includes('password') || textLower.includes('pin') || textLower.includes('gift card') || textLower.includes('wire transfer')) {
-      baseScore += 25;
-      factors.push({ type: 'NEGATIVE', points: +25, description: 'Request for credentials, OTP, or advance payment' });
+      baseScore += 30;
+      factors.push({ type: 'NEGATIVE', points: +30, description: 'Request for credentials, OTP, or advance payment' });
       findings.push({ category: 'CREDENTIAL_HARVESTING', severity: 'HIGH', detail: 'Message requests sensitive passwords, OTP codes, or gift card payments.' });
       threatIndicators.push('OTP / Advance payment request');
     }
 
-    // Crypto & Job Lures
     if (textLower.includes('guaranteed return') || textLower.includes('crypto giveaway') || textLower.includes('no experience required $500/day')) {
       baseScore += 25;
       factors.push({ type: 'NEGATIVE', points: +25, description: 'Unrealistic financial gain or job offer lure' });
@@ -187,14 +253,13 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
     }
 
     if (factors.length === 0) {
-      baseScore -= 20;
-      factors.push({ type: 'POSITIVE', points: -20, description: 'No obvious scam pressure keywords detected' });
+      baseScore -= 10;
+      factors.push({ type: 'POSITIVE', points: -10, description: 'No obvious scam pressure keywords detected' });
     }
 
     recommendations.push('Never share OTPs, passwords, or bank details over SMS or email.');
     recommendations.push('Contact the official organization directly via verified channels.');
   } else {
-    // HASH / IP
     baseScore -= 10;
     factors.push({ type: 'POSITIVE', points: -10, description: 'Valid technical indicator format' });
     findings.push({ category: 'TECHNICAL_INDICATOR', severity: 'INFO', detail: `Submitted valid ${classification} string for defensive indexing.` });
@@ -205,8 +270,8 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
 
   let riskLevel: NexusResult['riskLevel'] = 'LOW';
   if (finalScore >= 75) riskLevel = 'HIGH_RISK';
-  else if (finalScore >= 55) riskLevel = 'SUSPICIOUS';
-  else if (finalScore >= 35) riskLevel = 'CAUTION';
+  else if (finalScore >= 50) riskLevel = 'SUSPICIOUS';
+  else if (finalScore >= 30) riskLevel = 'CAUTION';
 
   return {
     input,
