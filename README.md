@@ -6,14 +6,9 @@
 
 ---
 
-## 👥 Project Team & Credits
+## FOUNDER 
 
-| Role | Team Member |
-| :--- | :--- |
-| **Lead Cybersecurity & Platform Architecture** | **Anshika Goswami** |
-| **Full-Stack Development & UX Engineering** | **Harvi Patel** |
-| **Security Intelligence & Data Engineering** | **Dhruvi Solanki** |
-
+Elliot (Sahil Pxtsec26)
 ---
 
 ## 🌟 Executive Summary
