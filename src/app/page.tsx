@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { FeatureStatusBadge } from '@/components/ui/FeatureStatusBadge';
+import { classifyInput, analyzeNexusInput, NexusResult } from '@/lib/server/nexusEngine';
 import {
   Shield,
   Search,
@@ -14,25 +15,58 @@ import {
   Dna,
   FileSearch,
   Lock,
-  Compass,
   ArrowRight,
   ShieldCheck,
   User,
-  FileCheck,
   Briefcase,
   Code,
+  AlertTriangle,
+  HelpCircle,
   CheckCircle2,
 } from 'lucide-react';
 
 export default function HomePage() {
+  const [inputQuery, setInputQuery] = useState('');
+  const [classifiedType, setClassifiedType] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [result, setResult] = useState<NexusResult | null>(null);
+
   const popularTools = [
-    { name: 'XTRACY EVIDENCEPULSE™', desc: 'Cryptographic evidence continuity engine & SHA-256 hash chaining', href: '/evidencepulse', icon: Dna, badge: 'LOCAL' as const },
-    { name: 'SECURITY POSTURE CHECK', desc: 'Controlled defensive inspection of HTTPS, TLS, SPF/DMARC & security.txt', href: '/tools/security-posture', icon: ShieldCheck, badge: 'LIVE' as const },
-    { name: 'X-SCAN INTELLIGENCE', desc: 'SSRF-protected URL, SMS & email lure threat analyzer', href: '/tools/x-scan', icon: Search, badge: 'LIVE' as const },
-    { name: 'PHISHLENS', desc: 'Social engineering & phishing tactic diagnostic', href: '/tools/phishlens', icon: Shield, badge: 'LOCAL' as const },
-    { name: 'X-FILE INSPECTOR', desc: 'Safe hash & metadata file inspector (zero server execution)', href: '/tools/file-inspector', icon: FileSearch, badge: 'LOCAL' as const },
-    { name: 'PASSWORD HEALTH LAB', desc: '100% browser-local entropy math & passphrase generator', href: '/tools/password-lab', icon: Lock, badge: 'LOCAL' as const },
+    { name: 'XTRACY NEXUS ENGINE', desc: 'Central intelligence engine for URLs, IPs, domains, hashes & emails', href: '/nexus', icon: Briefcase, badge: 'LOCAL' as const },
+    { name: 'REAL SCAM CHECK', desc: 'Evidence-based risk diagnostic for SMS, job offers & payment lures', href: '/scam-check', icon: AlertTriangle, badge: 'LOCAL' as const },
+    { name: 'EVIDENCEPULSE™ ENGINE', desc: 'SHA-256 hash chaining, RFC 8785 canonical manifests & tamper detection', href: '/evidencepulse', icon: Dna, badge: 'LOCAL' as const },
+    { name: 'INDEPENDENT VERIFIER™', desc: 'Separate environment to verify package structure & ECDSA signatures', href: '/verifier', icon: ShieldCheck, badge: 'LOCAL' as const },
+    { name: 'SECURITY POSTURE CHECK', desc: 'Defensive inspection of HTTPS, TLS, SPF/DMARC & security.txt', href: '/tools/security-posture', icon: ShieldCheck, badge: 'LIVE' as const },
+    { name: 'SECURITY TEST LAB', desc: '26 automated in-browser unit tests verifying AES-GCM, PBKDF2 & ECDSA', href: '/test-lab', icon: Code, badge: 'LOCAL' as const },
   ];
+
+  const handleInputChange = (val: string) => {
+    setInputQuery(val);
+    if (val.trim()) {
+      setClassifiedType(classifyInput(val));
+    } else {
+      setClassifiedType(null);
+    }
+  };
+
+  const handleExecuteNexus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputQuery.trim()) return;
+
+    setAnalyzing(true);
+    try {
+      const res = await analyzeNexusInput(inputQuery);
+      setResult(res);
+
+      // Save to local history
+      const historyRaw = localStorage.getItem('xtracy_nexus_history');
+      const history = historyRaw ? JSON.parse(historyRaw) : [];
+      localStorage.setItem('xtracy_nexus_history', JSON.stringify([res, ...history].slice(0, 10)));
+    } catch (err) {
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-16 animate-fadeIn pb-12 max-w-6xl mx-auto">
@@ -40,73 +74,106 @@ export default function HomePage() {
       <div className="flex flex-col items-center justify-center text-center gap-6 pt-8">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-blue/20 border border-brand-cyan/40 text-brand-cyan text-xs font-extrabold uppercase tracking-widest shadow-glowBlue">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>XTRACY 2.0 — PRIVACY-FIRST EVIDENCE INTELLIGENCE PLATFORM</span>
+          <span>XTRACY 2.1 — TRANSPARENT CYBER INTELLIGENCE PLATFORM</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white max-w-4xl leading-tight">
-          Evidence should not lose its story.
+          Investigate anything. Understand the risk.
         </h1>
 
         <p className="text-sm sm:text-base text-gray-300 max-w-2xl leading-relaxed">
-          XTRACY helps organize digital incidents, preserve evidence chronology, and verify cryptographic integrity while keeping sensitive vault data under user control.
+          XTRACY helps organize digital incidents, analyze threat indicators, preserve evidence chronology, and verify cryptographic integrity while keeping sensitive vault data under user control.
         </p>
 
-        {/* Primary CTA Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-          <Link
-            href="/nexus"
-            className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-brand-blue to-brand-electric text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center gap-2"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Create Secure Case</span>
-          </Link>
+        {/* Central Intelligent Input Area */}
+        <div className="w-full max-w-3xl flex flex-col gap-3 pt-2">
+          <form onSubmit={handleExecuteNexus} className="relative flex items-center">
+            <input
+              type="text"
+              value={inputQuery}
+              onChange={(e) => handleInputChange(e.target.value)}
+              placeholder="Paste URL, domain, IP address, file hash, email, or suspicious message text..."
+              className="w-full p-4 pr-36 rounded-2xl bg-darkBg-card/90 border border-brand-cyan/40 text-white placeholder-gray-500 text-xs sm:text-sm focus:outline-none focus:border-brand-cyan shadow-2xl backdrop-blur-xl"
+              required
+            />
 
-          <Link
-            href="/evidencepulse"
-            className="px-8 py-3.5 rounded-xl bg-darkBg-card hover:bg-gray-800 border border-brand-cyan/40 text-brand-cyan font-extrabold text-xs transition-all flex items-center gap-2"
-          >
-            <Dna className="w-4 h-4 text-brand-cyan" />
-            <span>Verify Evidence</span>
-          </Link>
+            <button
+              type="submit"
+              disabled={analyzing}
+              className="absolute right-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-blue to-brand-electric text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center gap-1.5"
+            >
+              <Search className="w-4 h-4" />
+              <span>{analyzing ? 'Analyzing...' : 'Investigate'}</span>
+            </button>
+          </form>
+
+          {/* Classified Indicator Tag */}
+          {classifiedType && (
+            <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-darkBg-panel/80 border border-gray-800 text-xs font-mono">
+              <span className="text-gray-400">Detected Input Classification:</span>
+              <span className="text-brand-cyan font-bold uppercase">{classifiedType}</span>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Analysis Result Modal / Card */}
+      {result && (
+        <GlassCard className="p-6 border-brand-cyan/50 shadow-2xl flex flex-col gap-6 text-xs animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+            <div>
+              <span className="text-[10px] text-brand-cyan uppercase font-bold font-mono">NEXUS Investigation Output</span>
+              <h3 className="text-lg font-bold text-white truncate max-w-xl">{result.input}</h3>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Badge type="risk" value={result.riskLevel} size="md" />
+              <div className="flex items-center gap-1">
+                <span className="text-2xl font-black text-white">{result.riskScore}</span>
+                <span className="text-xs text-gray-500 font-bold">/100</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Explainable Factor Breakdown */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs font-bold text-brand-cyan uppercase tracking-wider flex items-center gap-1.5">
+              <HelpCircle className="w-4 h-4" /> Explainable Risk Factor Calculation
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {result.factors.map((f, idx) => (
+                <div
+                  key={idx}
+                  className={`p-3.5 rounded-xl border font-mono text-[11px] flex items-center justify-between ${
+                    f.type === 'POSITIVE'
+                      ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
+                      : 'bg-red-950/40 border-red-800 text-red-300'
+                  }`}
+                >
+                  <span>{f.description}</span>
+                  <strong className="font-bold">{f.points > 0 ? `+${f.points}` : f.points} pts</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          <div className="p-4 rounded-xl bg-darkBg-panel border border-gray-800 flex flex-col gap-2">
+            <strong className="text-white font-bold text-xs uppercase font-sans">Recommended Defensive Actions:</strong>
+            <ul className="list-disc pl-5 space-y-1 text-gray-300 text-xs">
+              {result.recommendations.map((rec, i) => (
+                <li key={i}>{rec}</li>
+              ))}
+            </ul>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Disclaimers Bar */}
       <div className="p-4 rounded-2xl bg-darkBg-card border border-gray-800 text-xs text-gray-400 text-center leading-relaxed max-w-4xl mx-auto">
         XTRACY is a privacy-first evidence organization and cryptographic verification platform. XTRACY is not a law-enforcement system and does not guarantee legal admissibility in court. Authorized investigators remain responsible for forensic acquisition procedures.
       </div>
-
-      {/* Flagship Module Showcase: EvidencePulse™ */}
-      <GlassCard className="p-8 border-brand-cyan/50 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-br from-brand-blue/10 via-darkBg-card to-brand-violet/10">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <Badge type="productStatus" value="FLAGSHIP MODULE" size="sm" />
-            <FeatureStatusBadge status="LOCAL" label="● LOCAL CRYPTO" />
-          </div>
-          <h2 className="text-2xl font-black text-white">XTRACY EvidencePulse™</h2>
-          <p className="text-xs text-gray-300 leading-relaxed max-w-xl">
-            Cryptographic Evidence Continuity Engine. Link evidence items with SHA-256 hash-chaining, monitor real-time tamper-evident continuity, and detect integrity mismatches deterministically.
-          </p>
-
-          <div className="flex items-center gap-3 pt-2">
-            <Link
-              href="/evidencepulse"
-              className="px-6 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-electric text-white font-extrabold text-xs shadow-glowBlue transition-all flex items-center gap-2"
-            >
-              <span>Launch EvidencePulse™ Console</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-darkBg-panel border border-gray-800 text-xs font-mono text-gray-300 flex flex-col gap-2 shrink-0 w-full md:w-auto">
-          <div className="text-emerald-400 font-bold text-sm">🟢 VERIFIED CONTINUITY</div>
-          <div>Evidence Items: 24</div>
-          <div>Integrity Matches: 24/24</div>
-          <div>Hash Chain: INTACT</div>
-          <div>Continuity Score: 94/100</div>
-        </div>
-      </GlassCard>
 
       {/* Popular Cyber Intelligence Tools */}
       <div className="flex flex-col gap-6">
@@ -115,7 +182,7 @@ export default function HomePage() {
             <Wrench className="w-5 h-5 text-brand-cyan" /> Cyber Safety & Evidence Tools
           </h2>
           <Link href="/tools" className="text-xs font-bold text-brand-cyan hover:underline flex items-center gap-1">
-            <span>View All 13 Tools</span>
+            <span>View All Tools</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

@@ -1,5 +1,3 @@
-import dns from 'dns';
-
 /**
  * SSRF (Server-Side Request Forgery) Protection & Safe Fetch Module
  * Prevents URL fetchers and scanning services from querying internal, loopback,
@@ -202,27 +200,36 @@ export async function validateUrlForSSRFAsync(inputUrl: string): Promise<SSRFChe
       return syncCheck;
     }
 
-    // Resolve DNS to verify resolved IP address
-    const lookup = await dns.promises.lookup(hostname, { all: true });
-    if (!lookup || lookup.length === 0) {
-      return { allowed: false, reason: `Domain '${hostname}' could not be resolved by DNS.` };
-    }
+    // Resolve DNS to verify resolved IP address if running in Node server environment
+    if (typeof window === 'undefined') {
+      try {
+        const dns = await import('node:dns');
+        const lookup = await dns.promises.lookup(hostname, { all: true });
+        if (!lookup || lookup.length === 0) {
+          return { allowed: false, reason: `Domain '${hostname}' could not be resolved by DNS.` };
+        }
 
-    for (const record of lookup) {
-      if (isPrivateIp(record.address)) {
+        for (const record of lookup) {
+          if (isPrivateIp(record.address)) {
+            return {
+              allowed: false,
+              reason: `Security Exception: Domain '${hostname}' resolves to private/restricted IP (${record.address}).`,
+              resolvedIp: record.address,
+            };
+          }
+        }
+
         return {
-          allowed: false,
-          reason: `Security Exception: Domain '${hostname}' resolves to private/restricted IP (${record.address}).`,
-          resolvedIp: record.address,
+          allowed: true,
+          normalizedUrl: syncCheck.normalizedUrl,
+          resolvedIp: lookup[0]?.address,
         };
+      } catch (dnsErr) {
+        return syncCheck;
       }
     }
 
-    return {
-      allowed: true,
-      normalizedUrl: syncCheck.normalizedUrl,
-      resolvedIp: lookup[0]?.address,
-    };
+    return syncCheck;
   } catch (err: any) {
     return { allowed: false, reason: `DNS resolution failed: ${err.message || 'Domain not found'}` };
   }
