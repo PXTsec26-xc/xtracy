@@ -25,6 +25,72 @@ export const ReportModal: React.FC<ReportModalProps> = ({ report, onClose }) => 
     URL.revokeObjectURL(url);
   };
 
+  const handleExportHtml = () => {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>XTRACY Security Analysis Report - ${report.reportId}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0c121c; color: #e2e8f0; padding: 40px; line-height: 1.6; }
+    .card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    h1 { color: #38bdf8; font-size: 24px; margin-bottom: 8px; }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0; font-family: monospace; font-size: 13px; }
+    .meta-box { background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; }
+    .indicator { background: #0f172a; border-left: 4px solid #38bdf8; padding: 16px; margin-bottom: 12px; border-radius: 4px; }
+    .footer { font-size: 11px; color: #64748b; font-style: italic; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div className="card">
+    <h1>XTRACY Automated Security Analysis Report</h1>
+    <div>Report ID: <strong>${report.reportId}</strong> | Platform: <strong>${report.platformVersion}</strong></div>
+    
+    <div className="meta">
+      <div className="meta-box">Timestamp: <strong>${new Date(report.generatedAt).toUTCString()}</strong></div>
+      <div className="meta-box">Category: <strong>${report.targetType}</strong></div>
+      <div className="meta-box">Verdict: <strong>${report.verdict}</strong></div>
+      <div className="meta-box">Risk Score: <strong>${report.riskScore} / 100</strong></div>
+    </div>
+
+    <div className="meta-box" style="margin-bottom: 24px;">
+      <strong style="color: #94a3b8; font-size: 11px; text-transform: uppercase;">Submitted Target Content:</strong>
+      <div style="font-family: monospace; font-size: 12px; word-break: break-all; margin-top: 6px;">${report.targetInputSnippet}</div>
+    </div>
+
+    <h2>Detected Technical Indicators (${report.factors.length})</h2>
+    ${report.factors
+      .map(
+        (f) => `
+      <div className="indicator">
+        <strong style="color: #ffffff; font-size: 14px;">${f.name} (+${f.points} pts - ${f.source})</strong>
+        <p style="font-size: 13px; color: #cbd5e1; margin-top: 6px;">${f.technicalExplanation}</p>
+      </div>`
+      )
+      .join('')}
+
+    <h2>Recommended Defensive Actions</h2>
+    <ul>
+      ${report.defensiveRecommendations.map((r) => `<li>${r}</li>`).join('')}
+    </ul>
+
+    <div className="footer">
+      <div>SHA-256 Checksum: <strong>${report.integrityHash}</strong> | Privacy Mode: <strong>${report.privacyMode}</strong></div>
+      <p>${report.disclaimerNotice}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `XTRACY_Report_${report.reportId}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-darkBg border border-brand-cyan/40 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-2xl animate-fadeIn text-xs max-h-[90vh] overflow-y-auto">
@@ -43,15 +109,23 @@ export const ReportModal: React.FC<ReportModalProps> = ({ report, onClose }) => 
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 rounded-xl bg-darkBg-panel hover:bg-gray-800 border border-gray-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
+              className="px-3 py-2 rounded-xl bg-darkBg-panel hover:bg-gray-800 border border-gray-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
             >
               <Printer className="w-4 h-4 text-brand-cyan" />
               <span className="hidden sm:inline">Print Report</span>
             </button>
 
             <button
+              onClick={handleExportHtml}
+              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Download HTML</span>
+            </button>
+
+            <button
               onClick={handleExportJson}
-              className="px-3.5 py-2 rounded-xl bg-brand-blue hover:bg-brand-electric text-white font-bold text-xs flex items-center gap-1.5 transition-all"
+              className="px-3 py-2 rounded-xl bg-brand-blue hover:bg-brand-electric text-white font-bold text-xs flex items-center gap-1.5 transition-all"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export JSON</span>
