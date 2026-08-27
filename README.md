@@ -119,4 +119,4 @@ Access the platform at [http://localhost:3000](http://localhost:3000).
 
 ## 📄 License & Attribution
 
-Developed under the **PXT sec26** initiative by Elliot (PXTsec26) 
+Developed under the **PXT sec26** initiative by Elliot (PXTsec26), Anshika G. (PXTsec26)  
