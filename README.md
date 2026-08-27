@@ -8,7 +8,7 @@
 
 ## FOUNDER 
 
-Elliot 
+Elliot |
 Cybersecurity & IT Student | Creator of XTRACY (pxtsec26) 
 ---
 
