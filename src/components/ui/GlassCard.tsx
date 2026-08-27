@@ -16,21 +16,21 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'relative rounded-2xl transition-all duration-300 backdrop-blur-md overflow-hidden';
+    'relative rounded-2xl transition-all duration-300 backdrop-blur-xl overflow-hidden';
 
   const variants = {
     default:
-      'bg-[rgba(12,18,28,0.65)] border border-[rgba(120,180,255,0.12)] text-gray-100 shadow-glass',
+      'bg-[rgba(9,16,29,0.75)] border border-[rgba(56,189,248,0.15)] text-gray-100 shadow-glass',
     subtle:
-      'bg-[rgba(17,24,39,0.4)] border border-[rgba(255,255,255,0.06)] text-gray-200',
+      'bg-[rgba(13,22,38,0.5)] border border-[rgba(255,255,255,0.07)] text-gray-200',
     interactive:
-      'bg-[rgba(12,18,28,0.7)] border border-[rgba(0,180,216,0.2)] hover:border-[rgba(0,245,212,0.5)] hover:shadow-glowBlue cursor-pointer text-gray-100',
+      'bg-[rgba(9,16,29,0.8)] border border-[rgba(56,189,248,0.2)] hover:border-[rgba(56,189,248,0.45)] hover:shadow-glowBlue cursor-pointer text-gray-100',
     critical:
       'bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] text-red-100',
     safe:
       'bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.3)] text-emerald-100',
     accent:
-      'bg-gradient-to-br from-[rgba(0,180,216,0.12)] to-[rgba(123,44,191,0.12)] border border-[rgba(0,180,216,0.25)] text-white',
+      'bg-gradient-to-br from-[rgba(56,189,248,0.12)] to-[rgba(2,132,199,0.12)] border border-[rgba(56,189,248,0.3)] text-white',
   };
 
   return (
