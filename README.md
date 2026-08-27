@@ -8,7 +8,8 @@
 
 ## FOUNDER 
 
-Elliot (Sahil Pxtsec26)
+Elliot 
+Cybersecurity & IT Student | Creator of XTRACY (pxtsec26) 
 ---
 
 ## 🌟 Executive Summary
@@ -41,7 +42,7 @@ Every tool and feature in XTRACY is built around **100% real logic**:
 
 ---
 
-## 🛠️ Complete Modular Tool Suite (18 Working Tools)
+## 🛠️ Complete Modular Tool Suite
 
 | Tool Name | Route | Technology & Privacy Guarantee |
 | :--- | :--- | :--- |
