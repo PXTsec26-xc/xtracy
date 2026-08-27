@@ -1,7 +1,7 @@
 # XTRACY Security Specifications & Defensive Controls
 
 > **Initiative:** PXT sec26  
-> **Team:** Anshika Goswami, Harvi Patel, Dhruvi Solanki  
+> **Team:** Solo (Elliot)  
 > **Security Policy Version:** 2.0.0
 
 ---
