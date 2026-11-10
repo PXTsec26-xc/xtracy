@@ -8,6 +8,17 @@ import { Calendar, Sparkles, Shield, CheckCircle2 } from 'lucide-react';
 export default function ChangelogPage() {
   const releases = [
     {
+      version: 'XTRACY 2.1',
+      date: 'November 2026',
+      title: 'Official Founder Recognition & Intellectual Property Protection',
+      highlights: [
+        'Consolidated official founder identity: Elliot PXT sec26 (Founder of PhantomXTrace) under PhantomXTrace (PXT).',
+        'Introduced /legal, /intellectual-property, /press, and /ownership public transparency routes.',
+        'Enhanced SEO structured data with Schema.org Person, Organization, and SoftwareApplication entities.',
+        'Established formal IP ownership records, trademark preparation, and third-party license compliance register.',
+      ],
+    },
+    {
       version: 'XTRACY NEXUS 2.0',
       date: 'August 2026',
       title: 'Global Cyber Safety & Intelligence Platform Upgrade',
@@ -17,7 +28,7 @@ export default function ChangelogPage() {
         'Modular Intelligence Engine: Standardized 6-part explainability (Facts, Heuristics, External Intel, AI Interpretation, Unknowns, Limitations).',
         'Top 10 Cyber Tools Hub: X-Scan Intelligence, PhishLens, Link DNA, X-File Inspector, Account Exposure Check, Privacy Exposure Score, Web Security Header Analyzer, Password Health Lab, Incident Response Pathfinder, Digital Safety Simulator.',
         'XTRACY AI Security Copilot 2.0: Context-aware AI modes with strict ethical safety guardrails.',
-        'Meet The Founder: Introduced founder Elliot, mission vision, and journey timeline.',
+        'Meet The Founder: Introduced founder Elliot PXT sec26 (Founder of PhantomXTrace), mission vision, and journey timeline.',
         'XTRACY Trust Center: /trust & /security covering Privacy Policy, Terms, Acceptable Use, AI Transparency, and Vulnerability Disclosure.',
         'Organization Mode: /organization with tenant data isolation and role-based permissions.',
       ],

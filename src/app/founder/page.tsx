@@ -3,11 +3,25 @@ import { Metadata } from 'next';
 import { FounderSection } from '@/components/founder/FounderSection';
 
 export const metadata: Metadata = {
-  title: 'Founder of XTRACY | Elliot',
+  title: 'Founder & Creator of XTRACY | Elliot PXT sec26',
   description:
-    'Elliot, also identified through the PXT sec26 project identity as Sahil, is the founder and creator of XTRACY, an independent cybersecurity and digital safety platform focused on defensive security, privacy, evidence integrity, and practical security analysis.',
+    'Official founder profile of Elliot PXT sec26, Founder of PhantomXTrace (PXT) and architect of the XTRACY defensive cybersecurity intelligence platform.',
   alternates: {
     canonical: 'https://xtracy.vercel.app/founder',
+  },
+  openGraph: {
+    title: 'Elliot PXT sec26 — Founder of PhantomXTrace & Creator of XTRACY',
+    description:
+      'Official founder profile of Elliot PXT sec26. Founder of PhantomXTrace (PXT) and creator of XTRACY, an independent cybersecurity intelligence platform.',
+    url: 'https://xtracy.vercel.app/founder',
+    siteName: 'XTRACY Cybersecurity Intelligence Platform',
+    type: 'profile',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Elliot PXT sec26 — Founder of PhantomXTrace',
+    description:
+      'Founder of PhantomXTrace (PXT) & Creator of XTRACY. Independent defensive cybersecurity intelligence platform.',
   },
 };
 

@@ -8,9 +8,16 @@ import { ShieldCheck, Lock, Eye, AlertTriangle, FileText, CheckCircle2, Terminal
 export const metadata: Metadata = {
   title: 'Security Governance & Pilot Readiness | XTRACY Platform',
   description:
-    'XTRACY Security Governance, Responsible Vulnerability Disclosure policy, Remediation Tracking, Known Limitations, and Pilot Evaluation Readiness disclosures.',
+    'XTRACY Security Governance, Responsible Vulnerability Disclosure policy, Remediation Tracking, Known Limitations, and Pilot Evaluation Readiness disclosures. Founded by Elliot PXT sec26 (Founder of PhantomXTrace).',
   alternates: {
     canonical: 'https://xtracy.vercel.app/governance',
+  },
+  openGraph: {
+    title: 'Security Governance & Pilot Readiness | XTRACY',
+    description:
+      'Responsible vulnerability disclosure policies, remediation tracking, and pilot readiness disclosures. Founded by Elliot PXT sec26.',
+    url: 'https://xtracy.vercel.app/governance',
+    siteName: 'XTRACY',
   },
 };
 
@@ -35,11 +42,23 @@ export default function GovernancePage() {
             </h1>
             <Badge type="productStatus" value="GOVERNANCE BASELINE" size="sm" />
           </div>
-          <span className="text-xs text-gray-400 font-mono">Elliot (PXT sec26 Sahil)</span>
+          <span className="text-xs text-sky-400 font-mono font-semibold">
+            Founder of PhantomXTrace (PXT)
+          </span>
         </div>
         <p className="text-xs text-gray-400">
           Responsible vulnerability disclosure policies, remediation tracking, known platform limits, and pilot evaluation readiness.
         </p>
+      </div>
+
+      {/* Attribution Banner */}
+      <div className="p-4 rounded-xl bg-darkBg-card/80 border border-gray-800 text-xs text-gray-300 flex items-center justify-between flex-wrap gap-2">
+        <span className="font-semibold text-white">
+          Founded by Elliot PXT sec26. Developed under the PhantomXTrace (PXT) identity.
+        </span>
+        <span className="text-[10px] font-mono text-brand-cyan uppercase">
+          DEFENSIVE GOVERNANCE CHARTER
+        </span>
       </div>
 
       {/* Pilot Readiness Overview */}
@@ -91,7 +110,7 @@ export default function GovernancePage() {
         <ul className="list-disc pl-5 space-y-1.5 font-mono text-xs text-gray-400">
           <li>Do not execute destructive testing or denial-of-service against production targets.</li>
           <li>Do not access or attempt to access other users&apos; browser local storage.</li>
-          <li>Submit technical details and reproduction steps via security@xtracy.vercel.app or GitHub Security Advisories.</li>
+          <li>Submit technical details and reproduction steps via GitHub Security Advisories at https://github.com/PXTsec26-xc/xtracy.</li>
         </ul>
       </GlassCard>
 

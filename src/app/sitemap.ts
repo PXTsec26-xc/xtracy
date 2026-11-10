@@ -8,6 +8,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/about',
     '/founder',
+    '/legal',
+    '/intellectual-property',
+    '/ownership',
+    '/press',
+    '/governance',
+    '/transparency',
     '/nexus',
     '/evidencepulse',
     '/verifier',
@@ -17,7 +23,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/dashboard',
     '/privacy-footprint',
     '/privacy-control',
-    '/transparency',
     '/trust',
     '/security',
     '/accessibility',
@@ -29,6 +34,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${baseUrl}${route}`,
     lastModified,
     changeFrequency: 'weekly',
-    priority: route === '' ? 1.0 : 0.8,
+    priority: route === '' ? 1.0 : route === '/founder' ? 0.9 : 0.8,
   }));
 }

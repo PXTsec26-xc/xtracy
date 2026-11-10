@@ -1,17 +1,27 @@
 {
-  "name": "XTRACY — Digital Safety & Security Intelligence Network",
+  "name": "XTRACY — Cybersecurity Intelligence Platform",
   "short_name": "XTRACY",
-  "description": "Trace. Analyze. Protect. Free public digital safety, cybersecurity intelligence, privacy awareness, emergency guidance, and women's safety platform.",
+  "description": "An independent, privacy-focused platform for digital investigation, intelligence analysis, and security operations by PhantomXTrace (PXT). Founded by Elliot PXT sec26.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#070A12",
-  "theme_color": "#070A12",
+  "background_color": "#030712",
+  "theme_color": "#030712",
   "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }

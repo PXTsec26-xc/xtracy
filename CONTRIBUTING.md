@@ -1,6 +1,8 @@
 # Contributing to XTRACY
 
-**Maintainer**: Elliot PXT / PXT ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
+**Founder & Creator**: Elliot PXT (PhantomXTrace Founder) ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
+**Organization**: PhantomXTrace (PXT)
+**Official Attribution**: Founded by Elliot PXT. Developed under the PhantomXTrace (PXT) identity.
 **Repository**: `https://github.com/PXTsec26-xc/xtracy.git`
 
 ---

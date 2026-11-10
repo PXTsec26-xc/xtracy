@@ -3,15 +3,22 @@ import { Metadata } from 'next';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { OfficialProjectInfo } from '@/components/common/OfficialProjectInfo';
-import { Shield, Lock, Eye, Dna, User, ArrowRight } from 'lucide-react';
+import { Shield, Lock, Eye, Dna, User, ArrowRight, Sparkles, Scale, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'About XTRACY | Cybersecurity & Digital Safety Platform',
+  title: 'About XTRACY | Independent Cybersecurity Intelligence Platform',
   description:
-    'Learn about XTRACY, an independent cybersecurity and digital safety platform founded and created by Elliot (PXT sec26 Sahil).',
+    'Learn about XTRACY, an independent cybersecurity and digital safety platform founded and created by Elliot PXT sec26 (Founder of PhantomXTrace) under the PhantomXTrace (PXT) identity.',
   alternates: {
     canonical: 'https://xtracy.vercel.app/about',
+  },
+  openGraph: {
+    title: 'About XTRACY — Independent Cybersecurity Intelligence Platform',
+    description:
+      'Founded by Elliot PXT sec26. Developed under the PhantomXTrace (PXT) identity. Practical defensive security, zero-knowledge encryption, and evidence integrity.',
+    url: 'https://xtracy.vercel.app/about',
+    siteName: 'XTRACY',
   },
 };
 
@@ -20,20 +27,21 @@ export default function AboutPage() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'XTRACY',
+    alternateName: 'PhantomXTrace',
     description:
-      'XTRACY is an independent cybersecurity and digital safety platform founded and created by Elliot (PXT sec26 Sahil), focused on defensive security, privacy, and evidence integrity.',
+      'XTRACY is an independent cybersecurity and digital safety intelligence platform founded and created by Elliot PXT sec26 (Founder of PhantomXTrace), focused on defensive security, privacy, and evidence integrity.',
     url: 'https://xtracy.vercel.app',
     founder: {
       '@type': 'Person',
-      name: 'Elliot',
-      alternateName: ['PXT sec26', 'Sahil'],
-      jobTitle: 'Founder & Creator of XTRACY',
+      name: 'Elliot PXT sec26',
+      alternateName: 'Founder of PhantomXTrace (PXT)',
+      jobTitle: 'Founder of PhantomXTrace (PXT) & Creator of XTRACY',
       url: 'https://xtracy.vercel.app/founder',
     },
   };
 
   return (
-    <div className="flex flex-col gap-8 animate-fadeIn max-w-5xl mx-auto">
+    <div className="flex flex-col gap-8 animate-fadeIn max-w-5xl mx-auto pb-12">
       {/* Schema.org Organization JSON-LD */}
       <script
         type="application/ld+json"
@@ -50,31 +58,33 @@ export default function AboutPage() {
             </h1>
             <Badge type="productStatus" value="ABOUT PLATFORM" size="sm" />
           </div>
-          <span className="text-xs text-gray-400 font-mono">Elliot (PXT sec26 Sahil)</span>
+          <span className="text-xs text-sky-400 font-mono font-semibold">
+            Founder of PhantomXTrace (PXT)
+          </span>
         </div>
         <p className="text-xs text-gray-400">
-          Independent cybersecurity and digital safety platform dedicated to defensive tools, privacy, and cryptographic evidence integrity.
+          Independent defensive cybersecurity intelligence platform dedicated to observable signals, privacy preservation, and cryptographic evidence integrity.
         </p>
       </div>
 
       {/* Hero Overview */}
       <GlassCard className="p-8 border-brand-cyan/40 shadow-2xl flex flex-col gap-4 text-xs leading-relaxed text-gray-300">
         <h2 className="text-xl font-black text-white">
-          XTRACY — Privacy-First Digital Evidence Intelligence Platform
+          XTRACY — Independent Cybersecurity Intelligence Platform
         </h2>
 
         <p className="text-sm font-semibold text-white">
-          XTRACY is an independent cybersecurity and digital safety platform founded and created by Elliot, also known through the project&apos;s PXT sec26 identity as Sahil.
+          Founded by Elliot PXT sec26. Developed under the PhantomXTrace (PXT) identity.
         </p>
 
         <p>
-          XTRACY focuses on practical defensive security, privacy-aware analysis, evidence integrity, and tools designed to support safer digital investigations and security awareness.
+          XTRACY focuses on practical defensive security, privacy-aware threat analysis, evidence integrity, and tools designed to support safer digital investigations without black-box scoring, fake progress bars, or surveillance telemetry.
         </p>
 
         <div className="p-4 rounded-xl bg-darkBg-panel border border-gray-800 flex flex-col gap-1 text-xs">
-          <strong className="text-brand-cyan uppercase font-bold text-[11px]">PLATFORM MISSION STATEMENT</strong>
+          <strong className="text-brand-cyan uppercase font-bold text-[11px]">PLATFORM MISSION MANDATE</strong>
           <p className="text-gray-200">
-            &quot;Protect evidence. Preserve continuity. Verify independently. Keep control with the user.&quot;
+            &quot;Protect evidence. Preserve continuity. Verify independently. Keep sensitive control exclusively with the user.&quot;
           </p>
         </div>
       </GlassCard>
@@ -87,7 +97,7 @@ export default function AboutPage() {
           </div>
           <strong className="text-base font-bold text-white">100% Privacy-First</strong>
           <p className="text-xs text-gray-400 leading-relaxed">
-            WebCrypto AES-GCM client-side encryption. Passwords and sensitive vault contents never leave your browser.
+            WebCrypto AES-GCM client-side encryption. User passphrases and sensitive vault contents never leave browser memory in plaintext.
           </p>
         </GlassCard>
 
@@ -107,7 +117,7 @@ export default function AboutPage() {
           </div>
           <strong className="text-base font-bold text-white">Independent Verification</strong>
           <p className="text-xs text-gray-400 leading-relaxed">
-            XTRACY Independent Verifier™ allows third parties to mathematically verify package structure and ECDSA signatures.
+            XTRACY Independent Verifier™ allows third parties to mathematically verify package structure and ECDSA signatures without passwords.
           </p>
         </GlassCard>
       </div>
@@ -115,13 +125,15 @@ export default function AboutPage() {
       {/* Official Project Info Card */}
       <OfficialProjectInfo />
 
-      {/* Link to Founder Page */}
-      <GlassCard className="p-6 border-brand-blue/30 flex items-center justify-between">
+      {/* Meet the Founder Callout */}
+      <GlassCard className="p-6 border-brand-blue/30 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <User className="w-6 h-6 text-brand-cyan" />
+          <User className="w-8 h-8 text-brand-cyan shrink-0" />
           <div className="flex flex-col gap-0.5 text-xs">
-            <strong className="text-white text-sm">Want to know more about the founder?</strong>
-            <span className="text-gray-400">Read about Elliot (PXT sec26 Sahil), Founder & Creator of XTRACY.</span>
+            <strong className="text-white text-sm">Founder &amp; Creator — Elliot PXT sec26</strong>
+            <span className="text-gray-400">
+              Read the full biography, project chronology, founder statement, and architectural vision.
+            </span>
           </div>
         </div>
 
@@ -133,6 +145,34 @@ export default function AboutPage() {
           <ArrowRight className="w-4 h-4" />
         </Link>
       </GlassCard>
+
+      {/* Exploration Links */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link
+          href="/governance"
+          className="p-3 rounded-xl bg-darkBg-panel hover:bg-gray-800 border border-gray-800 text-center text-xs font-bold text-sky-400 transition-all"
+        >
+          Governance →
+        </Link>
+        <Link
+          href="/transparency"
+          className="p-3 rounded-xl bg-darkBg-panel hover:bg-gray-800 border border-gray-800 text-center text-xs font-bold text-emerald-400 transition-all"
+        >
+          Transparency Center →
+        </Link>
+        <Link
+          href="/legal"
+          className="p-3 rounded-xl bg-darkBg-panel hover:bg-gray-800 border border-gray-800 text-center text-xs font-bold text-brand-cyan transition-all"
+        >
+          Legal Terms →
+        </Link>
+        <Link
+          href="/intellectual-property"
+          className="p-3 rounded-xl bg-darkBg-panel hover:bg-gray-800 border border-gray-800 text-center text-xs font-bold text-indigo-400 transition-all"
+        >
+          Intellectual Property →
+        </Link>
+      </div>
     </div>
   );
 }

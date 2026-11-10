@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Elliot PXT (PhantomXTrace).
+ * Original XTRACY project materials.
+ * All rights reserved, subject to applicable third-party licences.
+ */
+
 /**
  * XTRACY NEXUS — Central Intelligence Engine
  * Deterministic input classification, multi-vector defensive checks, and explainable risk scoring.

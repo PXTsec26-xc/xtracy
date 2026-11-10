@@ -1,7 +1,9 @@
 # Security & Responsible Vulnerability Disclosure Policy
 
 **Project**: XTRACY Cybersecurity Intelligence Platform
-**Maintainer**: Elliot PXT / PXT ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
+**Founder & Maintainer**: Elliot PXT (PhantomXTrace Founder) ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
+**Organization**: PhantomXTrace (PXT)
+**Official Attribution**: Founded by Elliot PXT. Developed under the PhantomXTrace (PXT) identity.
 **Live Production URL**: `https://xtracy.vercel.app`
 
 ---

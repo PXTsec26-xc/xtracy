@@ -4,12 +4,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-000000?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
 [![Tests](https://img.shields.io/badge/Tests-26%20Passed-10b981?style=for-the-badge)](docs/TESTING.md)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE_INDEX.md)
+[![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Permissive%20Deps-blue?style=for-the-badge)](NOTICE.md)
 
 > **Live Deployment:** [https://xtracy.vercel.app](https://xtracy.vercel.app)
-> **Author & Creator:** Elliot PXT / PXT ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
-> **Initiative:** PXT sec26 Defensive Security Research
+> **Founder & Creator:** Elliot PXT (PhantomXTrace Founder) ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
+> **Organization / Initiative:** PhantomXTrace (PXT)
 > **Git Repository:** `https://github.com/PXTsec26-xc/xtracy.git`
+> **Official Attribution:** Founded by Elliot PXT. Developed under the PhantomXTrace (PXT) identity.
 
 ---
 
@@ -172,12 +173,17 @@ For detailed engineering and security specifications, review the dedicated guide
 - [Verified Changelog (`docs/CHANGELOG.md`)](docs/CHANGELOG.md)
 - [Vulnerability Disclosure Policy (`SECURITY.md`)](SECURITY.md)
 - [Contribution Guidelines (`CONTRIBUTING.md`)](CONTRIBUTING.md)
+- [Official Notice & IP Attribution (`NOTICE.md`)](NOTICE.md)
+- [Founder Declaration (`docs/FOUNDER_DECLARATION.md`)](docs/FOUNDER_DECLARATION.md)
+- [IP Ownership Record (`docs/IP_OWNERSHIP_RECORD.md`)](docs/IP_OWNERSHIP_RECORD.md)
+- [Third-Party License Audit (`docs/THIRD_PARTY_LICENSE_AUDIT.md`)](docs/THIRD_PARTY_LICENSE_AUDIT.md)
 
 ---
 
 ## 👤 Author & Attribution
 
-- **Creator & Founder:** Elliot PXT / PXT ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
-- **Initiative:** PXT sec26 Defensive Security Research
+- **Founder & Creator:** Elliot PXT (PhantomXTrace Founder) ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
+- **Research Initiative:** PhantomXTrace (PXT)
+- **Official Attribution:** Founded by Elliot PXT. Developed under the PhantomXTrace (PXT) identity.
 - **Live Deployment:** [https://xtracy.vercel.app](https://xtracy.vercel.app)
-- **License:** MIT License — See [LICENSE_INDEX.md](docs/xtracy-master-dossier/LICENSE_INDEX.md)
+- **Licensing & Intellectual Property:** Original materials Copyright © 2026 Elliot PXT (PhantomXTrace). All rights reserved, subject to applicable third-party open-source licences. See [NOTICE.md](NOTICE.md) and [docs/THIRD_PARTY_LICENSE_AUDIT.md](docs/THIRD_PARTY_LICENSE_AUDIT.md).

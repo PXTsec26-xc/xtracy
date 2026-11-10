@@ -9,9 +9,16 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Transparency Center | XTRACY Security & Privacy Architecture',
   description:
-    'Detailed technical disclosures on XTRACY analysis methodology, local WebCrypto encryption, SSRF protection rules, data handling, and known limitations.',
+    'Detailed technical disclosures on XTRACY analysis methodology, local WebCrypto encryption, SSRF protection rules, data handling, and known limitations. Founded by Elliot PXT sec26 (Founder of PhantomXTrace).',
   alternates: {
     canonical: 'https://xtracy.vercel.app/transparency',
+  },
+  openGraph: {
+    title: 'Transparency Center | XTRACY Security Architecture',
+    description:
+      'Independent security disclosures and verifiable architecture. Founded by Elliot PXT sec26 under PhantomXTrace (PXT).',
+    url: 'https://xtracy.vercel.app/transparency',
+    siteName: 'XTRACY',
   },
 };
 
@@ -28,18 +35,30 @@ export default function TransparencyPage() {
             </h1>
             <Badge type="productStatus" value="TECHNICAL DISCLOSURES" size="sm" />
           </div>
-          <span className="text-xs text-gray-400 font-mono">Elliot (PXT sec26 Sahil)</span>
+          <span className="text-xs text-sky-400 font-mono font-semibold">
+            Founder of PhantomXTrace (PXT)
+          </span>
         </div>
         <p className="text-xs text-gray-400">
           Independent security disclosures, analysis methodology, data processing rules, and platform limitations.
         </p>
       </div>
 
+      {/* Attribution Banner */}
+      <div className="p-4 rounded-xl bg-darkBg-card/80 border border-gray-800 text-xs text-gray-300 flex items-center justify-between flex-wrap gap-2">
+        <span className="font-semibold text-white">
+          Founded by Elliot PXT sec26. Developed under the PhantomXTrace (PXT) identity.
+        </span>
+        <span className="text-[10px] font-mono text-emerald-400 uppercase">
+          EVIDENTIARY TRANSPARENCY STANDARD
+        </span>
+      </div>
+
       {/* Hero Card */}
       <GlassCard className="p-8 border-emerald-500/40 shadow-2xl flex flex-col gap-4 text-xs leading-relaxed text-gray-300">
         <h2 className="text-xl font-black text-white flex items-center gap-2">
           <ShieldCheck className="w-6 h-6 text-emerald-400" />
-          Technical Transparency & Verification Standard
+          Technical Transparency &amp; Verification Standard
         </h2>
 
         <p>
@@ -71,11 +90,11 @@ export default function TransparencyPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlassCard className="p-6 border-emerald-500/30 flex flex-col gap-3">
           <h3 className="text-base font-bold text-emerald-400 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" /> What XTRACY Can Analyze & Detect
+            <CheckCircle2 className="w-5 h-5" /> What XTRACY Can Analyze &amp; Detect
           </h3>
           <ul className="list-disc pl-5 space-y-2 text-xs text-gray-300 leading-relaxed">
             <li><strong>Brand Impersonation Lures</strong>: Subdomains and hyphenated domains mimicking major financial, tech, or retail brands.</li>
-            <li><strong>Credential & Urgency Pressure Keywords</strong>: Phishing patterns in SMS, WhatsApp, email, or URL strings.</li>
+            <li><strong>Credential &amp; Urgency Pressure Keywords</strong>: Phishing patterns in SMS, WhatsApp, email, or URL strings.</li>
             <li><strong>Structural URL Anomalies</strong>: Punycode homoglyphs, IP hostnames, excessive subdomains, and URL shorteners.</li>
             <li><strong>Client-Side Cryptography</strong>: Browser-native AES-GCM 256-bit vault encryption and SHA-256 hash chaining.</li>
             <li><strong>SSRF Boundaries</strong>: Automatic loopback, RFC1918 private network, and cloud metadata blocking.</li>
@@ -84,7 +103,7 @@ export default function TransparencyPage() {
 
         <GlassCard className="p-6 border-amber-500/30 flex flex-col gap-3">
           <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" /> Platform Limitations & Scope
+            <AlertTriangle className="w-5 h-5" /> Platform Limitations &amp; Scope
           </h3>
           <ul className="list-disc pl-5 space-y-2 text-xs text-gray-300 leading-relaxed">
             <li><strong>No Guaranteed Safety</strong>: Automated heuristics provide decision support; clean scores do not guarantee complete safety.</li>

@@ -1,8 +1,10 @@
-# Hi, I'm Elliot PXT (PhantomXTrace) 👋
+# Hi, I'm Elliot PXT 👋
 
-**Defensive Cybersecurity Researcher | Security Engineering & Software Development**
+**Founder & Creator of XTRACY | PhantomXTrace (PXT)**
+**Defensive Cybersecurity Researcher | Security Engineering & Software Architecture**
 📍 GitHub: [@PXTsec26-xc](https://github.com/PXTsec26-xc)
-🌐 Live Project: [https://xtracy.vercel.app](https://xtracy.vercel.app)
+🌐 Live Platform: [https://xtracy.vercel.app](https://xtracy.vercel.app)
+📌 Official Attribution: Founded by Elliot PXT. Developed under the PhantomXTrace (PXT) identity.
 
 ---
 
