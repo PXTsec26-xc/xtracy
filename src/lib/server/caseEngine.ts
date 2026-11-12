@@ -3,6 +3,7 @@
  * Manages end-to-end investigation cases: CASE -> TARGET -> INDICATORS -> EVIDENCE -> ANALYSIS -> FINDINGS -> TIMELINE -> VERIFICATION -> REPORT.
  */
 
+import { randomBytes } from 'crypto';
 import { buildEvidenceGraph, IntelligenceGraph } from '@/lib/server/graphEngine';
 import { buildTemporalTimeline, TemporalTimeline } from '@/lib/server/temporalEngine';
 import { generateSecurityTwin, SecurityTwinState } from '@/lib/server/securityTwin';
@@ -27,7 +28,7 @@ export function createInvestigationCase(
   targetInput: string,
   analysisData: any
 ): InvestigationCase {
-  const caseId = `XTR-CASE-${Math.floor(100000 + Math.random() * 900000)}`;
+  const caseId = `XTR-CASE-${randomBytes(4).toString('hex').toUpperCase()}`;
   const timestamp = new Date().toISOString();
   const factors = Array.isArray(analysisData?.factors) ? analysisData.factors : [];
 

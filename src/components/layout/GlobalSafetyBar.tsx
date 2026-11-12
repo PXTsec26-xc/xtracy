@@ -2,17 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Globe, ShieldAlert, LogOut, Info } from 'lucide-react';
-
-const COUNTRIES = [
-  { code: 'GLOBAL', name: 'Global / International' },
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'EU', name: 'European Union' },
-  { code: 'IN', name: 'India' },
-];
+import { Globe, ShieldAlert, LogOut } from 'lucide-react';
+import { COUNTRY_PROFILES } from '@/lib/globalSafetyData';
 
 export const GlobalSafetyBar: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState('GLOBAL');
@@ -26,27 +17,31 @@ export const GlobalSafetyBar: React.FC = () => {
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
         {/* Left: Global Safety Network Label */}
         <div className="flex items-center gap-2 text-gray-300">
-          <Globe className="w-4 h-4 text-brand-cyan animate-pulse" />
+          <Globe className="w-4 h-4 text-brand-cyan shrink-0" aria-hidden="true" />
           <span className="font-bold tracking-wide text-white uppercase text-[11px]">
-            🌐 XTRACY Global Safety Network
+            XTRACY Global Safety Network
           </span>
           <span className="hidden md:inline-block text-[10px] text-gray-400 border-l border-gray-700 pl-2">
-            XTRACY does not replace local emergency services.
+            Educational directory — does not replace local emergency services.
           </span>
         </div>
 
         {/* Right: Actions & Country Selector & Quick Exit */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-1 bg-darkBg-panel px-2.5 py-1 rounded-lg border border-gray-800">
-            <span className="text-[10px] text-gray-400 font-semibold">Region:</span>
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap justify-center">
+          <div className="flex items-center gap-1.5 bg-darkBg-panel px-2.5 py-1 rounded-lg border border-gray-800">
+            <label htmlFor="global-safety-bar-country" className="text-[10px] text-gray-400 font-semibold">
+              Region:
+            </label>
             <select
+              id="global-safety-bar-country"
+              aria-label="Select country or region for safety resources"
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="bg-transparent text-white font-bold text-[11px] focus:outline-none cursor-pointer"
+              className="bg-transparent text-white font-bold text-[11px] max-w-[165px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan rounded cursor-pointer"
             >
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code} className="bg-darkBg text-white">
-                  {c.name}
+              {COUNTRY_PROFILES.map((c) => (
+                <option key={c.countryCode} value={c.countryCode} className="bg-darkBg text-white">
+                  {c.countryName}
                 </option>
               ))}
             </select>
@@ -54,19 +49,19 @@ export const GlobalSafetyBar: React.FC = () => {
 
           <Link
             href={`/global-safety?countryCode=${selectedCountry}`}
-            className="px-2.5 py-1 rounded-lg bg-brand-blue/20 hover:bg-brand-blue/30 border border-brand-cyan/40 text-brand-cyan font-bold text-[11px] transition-all flex items-center gap-1"
+            className="px-2.5 py-1 rounded-lg bg-brand-blue/20 hover:bg-brand-blue/30 border border-brand-cyan/40 text-brand-cyan font-bold text-[11px] transition-all flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
+            <ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Safety Resources</span>
           </Link>
 
           <button
             type="button"
             onClick={handleQuickExit}
-            className="px-2.5 py-1 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-[11px] transition-all flex items-center gap-1"
-            title="Instantly exit to Google.com for privacy"
+            className="px-2.5 py-1 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-200 font-bold text-[11px] transition-all flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            title="Immediately leave this page for Google.com"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Quick Exit</span>
           </button>
         </div>

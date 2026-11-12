@@ -2,23 +2,22 @@
 
 **Target Platform**: XTRACY Cybersecurity Intelligence Platform
 **Official URL**: `https://xtracy.vercel.app/`
-**Official Founder**: Sahil Maisuria (Elliot PXT)
-**Organization**: PhantomXTrace (PXT)
-**Date**: November 10, 2026
+**Sole Founder**: Elliot | PhantomXTrace (PXT)
+**Founder Designation**: Elliot PXT sec26
+**Date**: November 2026
 
 ---
 
 ## 1. Objective & Target Queries
 
-This guide outlines the precise steps to verify ownership of `https://xtracy.vercel.app/` in Google Search Console, submit sitemaps, inspect the `/founder` page, and monitor search appearance for the following target search queries:
+This guide outlines the steps to verify ownership of `https://xtracy.vercel.app/` in Google Search Console, submit sitemaps, inspect the `/founder` page, and monitor search appearance for branded public queries:
 
-- `Sahil Maisuria`
 - `Elliot PXT`
-- `Sahil Maisuria XTRACY`
-- `Elliot PXT Founder`
+- `Elliot PXT sec26`
+- `PhantomXTrace Founder`
 - `XTRACY Founder`
 - `Founder of XTRACY`
-- `PhantomXTrace Founder`
+- `XTRACY Cybersecurity Platform`
 
 ---
 
@@ -73,14 +72,14 @@ Google validates structured data for rich snippets and entity graphing:
 2. Input URL: `https://xtracy.vercel.app/founder`
 3. Confirm that the following entities are detected without errors:
    - **Person**:
-     - `name`: Sahil Maisuria
-     - `alternateName`: Elliot PXT
-     - `jobTitle`: Founder & Creator of XTRACY
+     - `name`: Elliot
+     - `alternateName`: Elliot PXT sec26
+     - `jobTitle`: Sole Founder — PhantomXTrace (PXT) & Creator of XTRACY
      - `worksFor`: PhantomXTrace (PXT)
      - `url`: https://xtracy.vercel.app/founder
    - **Organization**:
      - `name`: XTRACY
-     - `alternateName`: PhantomXTrace
+     - `alternateName`: PhantomXTrace (PXT)
      - `url`: https://xtracy.vercel.app
    - **SoftwareApplication**:
      - `name`: XTRACY
@@ -91,5 +90,5 @@ Google validates structured data for rich snippets and entity graphing:
 ## 6. Performance & Query Monitoring
 
 1. In Search Console, monitor **Performance** > **Search results**.
-2. Track impressions and clicks for branded queries: `Sahil Maisuria`, `Elliot PXT`, `XTRACY Founder`.
+2. Track impressions and clicks for branded public queries: `Elliot PXT`, `Elliot PXT sec26`, `XTRACY Founder`, `PhantomXTrace`.
 3. Check the **Pages** report to verify indexed status across all routes.

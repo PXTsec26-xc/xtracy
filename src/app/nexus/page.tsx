@@ -5,8 +5,25 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { DataTrustBadge } from '@/components/ui/DataTrustBadge';
 import { FeatureStatusBadge } from '@/components/ui/FeatureStatusBadge';
+import { calculateSHA256 } from '@/lib/evidencePulse';
+import { canonicalizeJson } from '@/lib/rfc8785';
 import { Briefcase, Plus, Search, ShieldAlert, FileText, Sparkles, ArrowRight, CheckCircle2, AlertTriangle, Info, Download, FileCheck } from 'lucide-react';
 import Link from 'next/link';
+
+function getOrCreateNexusGuestId(): string {
+  if (typeof window === 'undefined') return '';
+  const storageKey = 'xtracy_nexus_guest_id';
+  let id = window.localStorage.getItem(storageKey);
+  if (!id || !/^[a-zA-Z0-9_-]{8,64}$/.test(id)) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    id = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    window.localStorage.setItem(storageKey, id);
+  }
+  return id;
+}
 
 export default function NexusWorkspacePage() {
   const [cases, setCases] = useState<any[]>([]);
@@ -18,7 +35,10 @@ export default function NexusWorkspacePage() {
   const [reportMarkdown, setReportMarkdown] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/nexus/cases')
+    const guestId = getOrCreateNexusGuestId();
+    fetch('/api/nexus/cases', {
+      headers: guestId ? { 'x-xtracy-guest-id': guestId } : {},
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -35,9 +55,13 @@ export default function NexusWorkspacePage() {
 
     setLoading(true);
     try {
+      const guestId = getOrCreateNexusGuestId();
       const res = await fetch('/api/nexus/cases', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(guestId ? { 'x-xtracy-guest-id': guestId } : {}),
+        },
         body: JSON.stringify({ title, analysisType, inputPayload }),
       });
       const data = await res.json();
@@ -47,7 +71,7 @@ export default function NexusWorkspacePage() {
         setTitle('');
         setInputPayload('');
       }
-    } catch (err) {
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -56,6 +80,14 @@ export default function NexusWorkspacePage() {
   const handleGenerateReport = async () => {
     if (!selectedCase) return;
     try {
+      const canonicalPayload = canonicalizeJson({
+        caseId: selectedCase.caseId,
+        title: selectedCase.title,
+        inputPayload: selectedCase.inputPayload,
+        createdAt: selectedCase.createdAt,
+      });
+      const digestHex = await calculateSHA256(canonicalPayload);
+
       const res = await fetch('/api/reports/verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,8 +98,8 @@ export default function NexusWorkspacePage() {
             {
               id: `${selectedCase.caseId}-01`,
               verificationStatus: 'VERIFIED',
-              originalFileHash: '8f32a76b9012c45e89d10a2b',
-              currentFileHash: '8f32a76b9012c45e89d10a2b',
+              originalFileHash: digestHex,
+              currentFileHash: digestHex,
               previousRecordHash: 'GENESIS_RECORD_00000000000000000000000000000000',
             },
           ],
@@ -77,7 +109,7 @@ export default function NexusWorkspacePage() {
       if (res.ok && data.success) {
         setReportMarkdown(data.data.reportMarkdown);
       }
-    } catch (err) {}
+    } catch {}
   };
 
   // Deterministic Case Readiness Score (0-100)

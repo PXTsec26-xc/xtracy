@@ -26,10 +26,12 @@ export const InteractiveThreatMap: React.FC = () => {
           <span>Incident Filters:</span>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter incidents by category">
           {categories.map((cat) => (
             <button
               key={cat}
+              type="button"
+              aria-pressed={selectedCategory === cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 selectedCategory === cat
@@ -68,6 +70,8 @@ export const InteractiveThreatMap: React.FC = () => {
               return (
                 <button
                   key={pin.id}
+                  type="button"
+                  aria-pressed={active}
                   onClick={() => setSelectedPin(pin)}
                   className={`p-4 rounded-xl text-left flex flex-col gap-2 transition-all duration-300 backdrop-blur-lg border ${
                     active

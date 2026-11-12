@@ -3,7 +3,7 @@
 
 **Book Title**: XTRACY Master Technical & Security Dossier
 **Subtitle**: A Complete Product, Architecture, Security, Evidence & Development Record
-**Created By**: Elliot / XTRACY Founder (PXT sec26 Sahil)
+**Created By**: Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`)
 **Version**: `v2.1 Final Ascension`
 **Date of Compilation**: September 13, 2026
 **Target Repository**: `https://github.com/PXTsec26-xc/xtracy.git`
@@ -25,7 +25,7 @@
 - **Git Commit Hash**: `386330a`
 
 ### 2. Author Introduction & Founder Profile
-- **Founder Identity**: Elliot (PXT sec26 Sahil), Creator & Founder of XTRACY.
+- **Founder Identity**: Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`).
 - **Why XTRACY Was Created**: Built to solve the pervasive problem of misleading security tools, fake scan progress bars, ungrounded threat intelligence scores, and opaque security claims.
 - **The Problem Statement**: Existing web safety platforms frequently rely on black-box scoring algorithms or static keyword lists presented as "real-time AI". XTRACY establishes a strict **"NO EVIDENCE = NO CLAIM"** paradigm where every risk score is explainable, auditable, and grounded in deterministic data.
 - **Security Philosophy**: Defensive, transparent, privacy-first, and evidence-based. XTRACY operates under strict defensive boundaries—prohibiting unauthorized intrusion tools while empowering users to inspect domain structures, DNS records, TLS certificates, and HTTP security headers.

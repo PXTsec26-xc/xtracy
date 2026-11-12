@@ -1,8 +1,11 @@
+import { randomBytes } from 'crypto';
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
 import { IntelligenceAnalysisResult, evaluateRiskLevel } from '@/lib/server/intelligenceEngine';
-import { validateUrlForSSRF } from '@/lib/ssrfProtection';
+import { validateUrlForSSRFAsync } from '@/lib/ssrfProtection';
+import { nexusCasesStore } from '@/lib/server/memoryStores';
+import { enforceRateLimit, extractBearerToken, parseBoundedJsonBody } from '@/lib/server/securityUtils';
 
 interface NexusCaseRecord {
   caseId: string;
@@ -14,77 +17,106 @@ interface NexusCaseRecord {
   createdAt: string;
 }
 
-// Thread-safe memory store fallback for NEXUS cases
-const memoryNexusCasesStore: Map<string, NexusCaseRecord[]> = new Map();
+function resolveScopedBucketKey(req: NextRequest, authenticatedUserId?: string): string | null {
+  if (authenticatedUserId) return `user:${authenticatedUserId}`;
+  const callerSession = req.headers.get('x-xtracy-guest-id')?.trim() || '';
+  if (/^[a-zA-Z0-9_-]{24,64}$/.test(callerSession)) {
+    return `guest:${callerSession}`;
+  }
+  return null;
+}
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
-  const user = await getUserBySessionToken(token);
-  const userId = user?.id || 'guest-session';
+  const rateErr = enforceRateLimit(req, 'nexus-cases-get', 40);
+  if (rateErr) return rateErr;
 
-  const userCases = memoryNexusCasesStore.get(userId) || [];
+  const token = extractBearerToken(req);
+  const user = await getUserBySessionToken(token);
+  const bucketKey = resolveScopedBucketKey(req, user?.id);
+
+  // Never expose a shared guest-session store across anonymous callers
+  const userCases = bucketKey ? (nexusCasesStore.get(bucketKey) as NexusCaseRecord[]) || [] : [];
 
   return createApiResponse({
     data: userCases,
     dataTrust: {
-      status: 'LIVE',
-      sourceName: 'XTRACY NEXUS Case Store',
+      status: 'LOCAL',
+      sourceName: 'XTRACY NEXUS Scoped Runtime Store',
       lastRefreshed: new Date().toISOString(),
     },
   });
 }
 
 export async function POST(req: NextRequest) {
+  const rateErr = enforceRateLimit(req, 'nexus-cases-post', 20);
+  if (rateErr) return rateErr;
+
   try {
-    const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+    const token = extractBearerToken(req);
     const user = await getUserBySessionToken(token);
-    const userId = user?.id || 'guest-session';
+    const bucketKey = resolveScopedBucketKey(req, user?.id) || `ephemeral:${randomBytes(16).toString('hex')}`;
 
-    const body = await req.json();
-    const { title, analysisType = 'URL', inputPayload = '' } = body;
+    const { data: body, error: parseErr } = await parseBoundedJsonBody<{
+      title?: string;
+      analysisType?: string;
+      inputPayload?: string;
+    }>(req, 16384);
+    if (parseErr) return parseErr;
 
-    if (!inputPayload || typeof inputPayload !== 'string') {
+    const { title, analysisType = 'URL', inputPayload = '' } = body || {};
+
+    if (!inputPayload || typeof inputPayload !== 'string' || inputPayload.length > 5000) {
       return createApiResponse({
-        error: { code: 'BAD_REQUEST', message: 'Input payload is required to open a NEXUS Case.' },
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'A valid input payload (max 5,000 characters) is required to open a NEXUS Case.',
+        },
         status: 400,
       });
     }
 
-    const caseId = `NEXUS-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+    const caseId = `NEXUS-${randomBytes(4).toString('hex').toUpperCase()}`;
 
     const facts: string[] = [];
     const heuristics: string[] = [];
     const externalIntel: string[] = [];
-    const unknowns: string[] = [];
+    const unknowns: string[] = ['Live external breach or proprietary threat-feed correlation was not queried locally.'];
     const limitations: string[] = [
-      'NEXUS investigation is based on automated indicators and heuristic analysis.',
-      'Always confirm identity through out-of-band channels before proceeding.',
+      'NEXUS triage scores structural URL and text indicators locally. Absence of flags does not prove safety.',
+      'Always verify sender identity through independent out-of-band channels.',
     ];
 
-    let riskScore = 20;
+    let riskScore = 15;
 
     if (analysisType === 'URL') {
-      const ssrfCheck = validateUrlForSSRF(inputPayload);
+      const ssrfCheck = await validateUrlForSSRFAsync(inputPayload);
       if (!ssrfCheck.allowed) {
         return createApiResponse({
-          error: { code: 'SSRF_RESTRICTED', message: ssrfCheck.reason || 'Target URL restricted by SSRF protection policies.' },
+          error: {
+            code: 'SSRF_RESTRICTED',
+            message: ssrfCheck.reason || 'Target URL restricted by SSRF protection policies.',
+          },
           status: 400,
         });
       }
 
-      facts.push(`Target URL validated: ${ssrfCheck.normalizedUrl}`);
+      facts.push(`Target URL passed syntax and public-network SSRF filter: ${ssrfCheck.normalizedUrl}`);
       const parsed = new URL(ssrfCheck.normalizedUrl!);
       if (parsed.protocol === 'https:') {
-        facts.push('HTTPS Transport Layer Security detected.');
+        facts.push('HTTPS scheme specified (live TLS handshake requires SSL Inspector).');
       } else {
-        heuristics.push('Plain HTTP connection detected (No TLS encryption).');
+        heuristics.push('Plain HTTP connection specified (unencrypted transport).');
+        riskScore += 30;
+      }
+      if (parsed.hostname.includes('xn--')) {
+        heuristics.push('Punycode IDN label detected in hostname (homograph risk).');
         riskScore += 25;
       }
     } else {
       facts.push(`Input payload received (${inputPayload.length} chars).`);
-      if (inputPayload.toLowerCase().includes('otp') || inputPayload.toLowerCase().includes('urgent')) {
-        heuristics.push('Urgency tactics or sensitive credential keywords detected in payload.');
-        riskScore += 35;
+      if (/(otp|urgent|verify your account|suspended|wire transfer|gift card)/i.test(inputPayload)) {
+        heuristics.push('Urgency tactics or sensitive credential/payment lure keywords detected.');
+        riskScore += 40;
       }
     }
 
@@ -95,7 +127,7 @@ export async function POST(req: NextRequest) {
       analysisType: analysisType as any,
       riskScore,
       riskLevel: evaluateRiskLevel(riskScore),
-      confidenceLevel: 'HIGH',
+      confidenceLevel: 'MODERATE',
       explainability: {
         facts,
         heuristics,
@@ -105,15 +137,15 @@ export async function POST(req: NextRequest) {
       },
       evidence: [...facts, ...heuristics],
       recommendedActions: [
-        'Do not click unverified links or enter passwords.',
-        'Ask XTRACY AI Copilot for a breakdown of this case.',
+        'Do not click unverified links or share credentials / one-time passcodes.',
+        'Run Web Header Analyzer or PhishLens for deeper structural inspection.',
       ],
       timestamp: new Date().toISOString(),
     };
 
     const newCase: NexusCaseRecord = {
       caseId,
-      title: title || `Case Investigation for ${analysisType}`,
+      title: (typeof title === 'string' && title.trim().slice(0, 120)) || `Case Triage (${analysisType})`,
       analysisType,
       status: 'ANALYZED',
       inputPayload,
@@ -121,20 +153,22 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    const existing = memoryNexusCasesStore.get(userId) || [];
-    memoryNexusCasesStore.set(userId, [newCase, ...existing]);
+    if (!bucketKey.startsWith('ephemeral:')) {
+      const existing = (nexusCasesStore.get(bucketKey) as NexusCaseRecord[]) || [];
+      nexusCasesStore.set(bucketKey, [newCase, ...existing].slice(0, 50));
+    }
 
     return createApiResponse({
       data: newCase,
       dataTrust: {
-        status: 'LIVE',
-        sourceName: 'XTRACY NEXUS Intelligence Engine',
+        status: 'LOCAL',
+        sourceName: 'XTRACY NEXUS Heuristic Engine',
         lastRefreshed: new Date().toISOString(),
       },
     });
-  } catch (err) {
+  } catch {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: 'Failed to create NEXUS Case investigation.' },
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to create NEXUS Case triage record.' },
       status: 500,
     });
   }

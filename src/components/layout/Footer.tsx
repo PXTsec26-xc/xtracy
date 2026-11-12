@@ -17,14 +17,14 @@ export const Footer: React.FC = () => {
             ANALYZE. UNDERSTAND. RESPOND.
           </p>
           <div className="p-3 rounded-xl bg-darkBg-card/80 border border-gray-800 text-[11px] leading-relaxed text-gray-300">
-            <span className="font-bold text-white block mb-0.5">Official Founder Attribution</span>
-            Founded by <strong>Elliot PXT sec26</strong>. Developed under the <strong>PhantomXTrace (PXT)</strong> identity.
+            <span className="font-bold text-white block mb-0.5">Official Project Provenance</span>
+            Founded by <strong>Elliot / PXT</strong> under the <strong>PhantomXTrace (PXT)</strong> defensive cybersecurity identity.
           </div>
           <p className="text-gray-400 text-[11px] leading-relaxed">
             Executive defensive cybersecurity platform providing real URL analysis, DNS intelligence, HTTP security header audits, and digital footprint inspection.
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <Badge type="productStatus" value="18 REAL TOOLS" size="sm" />
+            <Badge type="productStatus" value="31 REAL TOOLS" size="sm" />
             <Badge type="productStatus" value="SSRF PROTECTED" size="sm" />
           </div>
         </div>
@@ -53,7 +53,7 @@ export const Footer: React.FC = () => {
             EvidencePulse™ SHA-256
           </Link>
           <Link href="/tools" className="text-sky-400 hover:underline font-semibold pt-1">
-            View All 18 Security Tools →
+            View All 31 Security Tools →
           </Link>
         </div>
 
@@ -81,17 +81,17 @@ export const Footer: React.FC = () => {
             Transparency Center
           </Link>
           <Link href="/test-lab" className="hover:text-white transition-colors">
-            Security Test Lab (26 Tests)
+            Security Test Lab (7 Tests)
           </Link>
         </div>
 
         {/* Col 4: Legal & Intellectual Property */}
         <div className="flex flex-col gap-2">
           <h4 className="font-bold text-white uppercase tracking-wider text-[11px] text-sky-400 mb-1 font-mono">
-            Founder &amp; Legal
+            Trust &amp; Legal
           </h4>
           <Link href="/founder" className="hover:text-white transition-colors font-semibold text-gray-200">
-            Founder Profile — Elliot PXT sec26
+            Founder Profile — Elliot / PXT
           </Link>
           <Link href="/about" className="hover:text-white transition-colors">
             About XTRACY &amp; PhantomXTrace
@@ -124,14 +124,14 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 mt-8 pt-6 border-t border-gray-800/80 flex flex-col gap-3 text-[11px] text-gray-400">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p>
-            Founded by <strong>Elliot PXT sec26</strong>. Developed under the <strong>PhantomXTrace (PXT)</strong> identity. Original project materials Copyright © 2026. All rights reserved, subject to applicable third-party open-source licences.
+            XTRACY Defensive Cybersecurity Platform — Founded by <strong>Elliot / PhantomXTrace (PXT)</strong>. Original materials Copyright © 2026, subject to applicable third-party open-source licences.
           </p>
           <div className="flex items-center gap-4 text-[11px] shrink-0">
             <span className="flex items-center gap-1 text-emerald-400">
-              <CheckCircle2 className="w-3.5 h-3.5" /> 100% Real Engines
+              <CheckCircle2 className="w-3.5 h-3.5" /> SSRF-Pinned Audits
             </span>
             <span className="flex items-center gap-1 text-indigo-400">
-              <Lock className="w-3.5 h-3.5" /> AES-GCM Encrypted Vault
+              <Lock className="w-3.5 h-3.5" /> AES-GCM Local Vault
             </span>
           </div>
         </div>

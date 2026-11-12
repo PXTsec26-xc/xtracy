@@ -32,6 +32,7 @@ export default function FileInspectorToolPage() {
 
   const [compareHash, setCompareHash] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const bufferToHex = (buffer: ArrayBuffer): string => {
@@ -45,6 +46,7 @@ export default function FileInspectorToolPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setErrorMsg(null);
     setLoading(true);
 
     try {
@@ -73,7 +75,7 @@ export default function FileInspectorToolPage() {
         extension: ext || 'No Extension',
       });
     } catch {
-      alert('Error reading local file for hashing.');
+      setErrorMsg('Unable to read or hash that file inside browser memory.');
     } finally {
       setLoading(false);
     }
@@ -133,6 +135,13 @@ export default function FileInspectorToolPage() {
         </label>
       </GlassCard>
 
+      {errorMsg && (
+        <div role="alert" className="p-3.5 rounded-xl bg-red-950/70 border border-red-800 text-red-200 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {/* Results */}
       {fileInfo && (
         <div className="flex flex-col gap-6 animate-fadeIn">
@@ -185,10 +194,11 @@ export default function FileInspectorToolPage() {
 
           {/* Checksum Match Validator */}
           <GlassCard className="p-6 border-gray-800 flex flex-col gap-3">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
+            <label htmlFor="file-compare-hash" className="text-xs font-bold text-white uppercase tracking-wider">
               Verify Checksum Against Expected Vendor Hash
-            </span>
+            </label>
             <input
+              id="file-compare-hash"
               type="text"
               value={compareHash}
               onChange={(e) => setCompareHash(e.target.value)}
@@ -232,6 +242,8 @@ export default function FileInspectorToolPage() {
                 </code>
               </div>
               <button
+                type="button"
+                aria-label="Copy SHA-256 digest"
                 onClick={() => copyToClipboard(fileInfo.sha256, 'sha256')}
                 className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white shrink-0 self-end sm:self-center"
               >
@@ -248,6 +260,8 @@ export default function FileInspectorToolPage() {
                 </code>
               </div>
               <button
+                type="button"
+                aria-label="Copy SHA-512 digest"
                 onClick={() => copyToClipboard(fileInfo.sha512, 'sha512')}
                 className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white shrink-0 self-end sm:self-center"
               >

@@ -9,7 +9,7 @@
  * Deterministic input classification, multi-vector defensive checks, and explainable risk scoring.
  */
 
-import { validateUrlForSSRF } from '@/lib/ssrfProtection';
+import { validateUrlForSSRF } from '@/lib/ssrfValidation';
 
 export type InputClassification = 'URL' | 'DOMAIN' | 'IP' | 'HASH' | 'EMAIL' | 'SCAM_TEXT';
 
@@ -287,8 +287,9 @@ export async function analyzeNexusInput(input: string): Promise<NexusResult> {
     factors,
     findings,
     threatIndicators,
-    redirectAnalysis: classification === 'URL' ? { hasRedirects: false, redirectCount: 0 } : undefined,
-    securityHeaders: classification === 'URL' ? { csp: false, hsts: true, xFrameOptions: true } : undefined,
+    // Redirects and HTTP headers are only reported when live inspection is executed via Header/Link tools
+    redirectAnalysis: undefined,
+    securityHeaders: undefined,
     recommendations,
     analyzedAt: new Date().toISOString(),
     privacyStatus: '100% Local Heuristic Inspection',

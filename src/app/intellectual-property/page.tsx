@@ -39,7 +39,7 @@ export default function IntellectualPropertyPage() {
     { mark: 'XTRACY NEXUS™', scope: 'Central indicator classification and multi-vector risk engine.' },
     { mark: 'EvidencePulse™', scope: 'Cryptographic hash chaining and RFC 8785 manifest pipeline.' },
     { mark: 'CaseSeal™', scope: 'Digital signature and Merkle tree root verification packaging.' },
-    { mark: 'PhantomXTrace™ / PXT™', scope: 'Founder research collective and development identity.' },
+    { mark: 'PhantomXTrace™ / PXT™', scope: 'Sole founder brand and development identity (Elliot | PhantomXTrace (PXT)).' },
   ];
 
   const thirdPartyDeps = [

@@ -1,3 +1,6 @@
+import crypto from 'crypto';
+import { canonicalizeJson } from '@/lib/rfc8785';
+
 /**
  * XTRACY Graph — Evidence-Backed Intelligence Graph Engine
  * Constructs auditable entity-relationship graphs where every node and relationship edge is backed by real observable evidence.
@@ -71,7 +74,7 @@ export function buildEvidenceGraph(
   const timestamp = new Date().toISOString();
 
   // Root Node
-  const rootNodeId = `node-root-${Math.floor(1000 + Math.random() * 9000)}`;
+  const rootNodeId = `node-root-${crypto.randomBytes(4).toString('hex')}`;
   nodes.push({
     id: rootNodeId,
     type: targetType,
@@ -108,11 +111,16 @@ export function buildEvidenceGraph(
     });
   });
 
+  const digestHex = crypto
+    .createHash('sha256')
+    .update(canonicalizeJson({ nodes, edges, generatedAt: timestamp }))
+    .digest('hex');
+
   return {
     nodes,
     edges,
     generatedAt: timestamp,
-    evidenceIntegrityHash: `SHA256-GRAPH-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+    evidenceIntegrityHash: digestHex,
     scopeSummary: `Evidence graph constructed for target ${inputTarget} (${nodes.length} nodes, ${edges.length} evidence edges).`,
   };
 }

@@ -32,22 +32,28 @@ export default function AccountExposureToolPage() {
 
       {/* Input Form */}
       <GlassCard className="p-6 border-amber-500/30 flex flex-col gap-4">
-        <form onSubmit={handleCheck} className="flex flex-col sm:flex-row gap-3 text-xs">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email address (e.g. user@domain.com)"
-            className="flex-1 p-3.5 rounded-xl bg-darkBg-panel border border-gray-800 text-white text-xs focus:border-amber-400"
-            required
-          />
-          <button
-            type="submit"
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center justify-center gap-2"
-          >
-            <KeyRound className="w-4 h-4" />
-            <span>Check Exposure</span>
-          </button>
+        <form onSubmit={handleCheck} className="flex flex-col gap-3 text-xs">
+          <label htmlFor="exposure-email-input" className="font-bold text-gray-300">
+            Email Address to Check:
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              id="exposure-email-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address (e.g. user@domain.com)"
+              className="flex-1 p-3.5 rounded-xl bg-darkBg-panel border border-gray-800 text-white text-xs focus:border-amber-400"
+              required
+            />
+            <button
+              type="submit"
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-glowBlue hover:brightness-110 transition-all flex items-center justify-center gap-2"
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Check Exposure</span>
+            </button>
+          </div>
         </form>
       </GlassCard>
 

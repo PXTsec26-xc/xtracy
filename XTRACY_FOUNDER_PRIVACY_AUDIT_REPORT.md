@@ -3,10 +3,10 @@
 **Document Classification:** Official Security & Privacy Audit Report
 **Date:** November 10, 2026
 **Platform:** XTRACY Cybersecurity Intelligence Platform
-**Public Founder Identity:** Elliot PXT sec26
-**Founder Role:** Founder of PhantomXTrace (PXT) & Creator of XTRACY
+**Public Founder Identity:** Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`)
+**Founder Role:** Sole Founder — PhantomXTrace (PXT) & Creator of XTRACY
 **Production Domain:** `https://xtracy.vercel.app` *(Preserved & Unmodified)*
-**Preview Deployment:** `https://xtracy-5x9it9dhh-elliot-0187.vercel.app` (Deployment ID: `dpl_FVhEsdhbraFXHfutJGtzkTqs63UF`)
+**Preview Deployment:** `[REDACTED PREVIEW ENVIRONMENT]`
 **Git Repository:** `https://github.com/PXTsec26-xc/xtracy`
 
 ---
@@ -19,7 +19,7 @@ In strict compliance with the founder privacy mandate, a **privacy-first dual-id
    - **Display Name**: `Elliot PXT sec26`
    - **Official Role**: `Founder of PhantomXTrace (PXT)` / `Creator of XTRACY`
    - **Status**: Pseudonymous, privacy-centric, minimal, and anonymous.
-   - **Public Pages & Bundles**: Zero plaintext legal name (`Sahil Maisuria`), zero personal phone numbers, zero personal email addresses, zero residential addresses, and zero personal credentials exist on any public page, frontend bundle, public API response, manifest, or SEO structured data block.
+   - **Public Pages & Bundles**: Zero plaintext legal name (`[REDACTED]`), zero personal phone numbers, zero personal email addresses, zero residential addresses, and zero personal credentials exist on any public page, frontend bundle, public API response, manifest, or SEO structured data block.
 
 2. **PRIVATE LEGAL & PROVENANCE LAYER**:
    - **Authentic Legal Identity**: Preserved exclusively in confidential ownership dossiers and statutory preparation records (`XTRACY_FOUNDER_RECORDS/`, `docs/FOUNDER_DECLARATION.md`, `docs/COPYRIGHT_PREPARATION.md`, `docs/IP_OWNERSHIP_RECORD.md`).
@@ -140,11 +140,11 @@ All 40 API endpoints were audited against the 6 security verification criteria:
    - *Finding*: `description` field in `public/manifest.json` previously contained the founder's full legal name.
    - *Remediation*: Replaced with `Elliot PXT sec26 (Founder of PhantomXTrace)`.
 2. **Schema.org JSON-LD Structured Data**:
-   - *Finding*: `layout.tsx` and `FounderSection.tsx` previously had `name: "Sahil Maisuria"` with `alternateName: "Elliot PXT"`.
-   - *Remediation*: Changed to `name: "Elliot PXT sec26"` and `alternateName: "Founder of PhantomXTrace (PXT)"`, completely eliminating legal name disclosure in search engine crawlers.
+   - *Finding*: `layout.tsx` and `FounderSection.tsx` previously exposed personal name metadata.
+   - *Remediation*: Sanitized to public brand/founder identity (`Elliot` / `Elliot PXT sec26` / `PhantomXTrace (PXT)`), eliminating legal name disclosure in search engine crawlers.
 3. **Public Hero & Navigation Attribution**:
-   - *Finding*: Hero card and mobile navigation contained `Sahil Maisuria`.
-   - *Remediation*: Converted strictly to `Elliot PXT sec26`.
+   - *Finding*: Hero card and mobile navigation previously contained legal-name string.
+   - *Remediation*: Converted strictly to public alias (`Elliot` / `Elliot PXT sec26`).
 
 ---
 
@@ -172,10 +172,10 @@ All verification suites passed with **0 errors and 0 warnings**:
 
 ## 7. Preview Deployment Verification
 
-- **Preview Deployment URL**: `https://xtracy-5x9it9dhh-elliot-0187.vercel.app`
-- **Deployment ID**: `dpl_FVhEsdhbraFXHfutJGtzkTqs63UF`
+- **Preview Deployment URL**: `[REDACTED]`
+- **Deployment ID**: `[REDACTED]`
 - **Region**: `iad1`
-- **Authentication**: Protected by Vercel team workspace SSO. Accessible to team maintainers (`elliot-0187` / `pxtsec26-xc`).
+- **Authentication**: Protected by Vercel workspace SSO (`[REDACTED]`).
 - **Live Production URL**: `https://xtracy.vercel.app` *(Preserved intact and unmodified)*.
 
 ---

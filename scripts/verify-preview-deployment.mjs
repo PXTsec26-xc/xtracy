@@ -1,12 +1,14 @@
 import https from 'https';
 
-const baseUrl = 'https://xtracy-5x9it9dhh-elliot-0187.vercel.app';
+const baseUrl = process.env.PREVIEW_URL || 'https://xtracy.vercel.app';
 
 const routes = [
   '/',
   '/founder',
   '/about',
   '/tools',
+  '/global-safety',
+  '/learning',
   '/legal',
   '/intellectual-property',
   '/ownership',
@@ -28,28 +30,32 @@ const routes = [
 function checkRoute(path) {
   return new Promise((resolve) => {
     const url = `${baseUrl}${path}`;
-    https.get(url, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        resolve({
-          path,
-          statusCode: res.statusCode,
-          location: res.headers.location,
-          contentType: res.headers['content-type'],
-          contentLength: res.headers['content-length'] || data.length,
-          hasFounderName: data.includes('Sahil Maisuria'),
-          hasAlias: data.includes('Elliot PXT'),
+    https
+      .get(url, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
         });
+        res.on('end', () => {
+          resolve({
+            path,
+            statusCode: res.statusCode,
+            location: res.headers.location,
+            contentType: res.headers['content-type'],
+            contentLength: res.headers['content-length'] || data.length,
+            hasPublicIdentity: data.includes('Elliot') || data.includes('PhantomXTrace'),
+            hasGmailLeak: /@gmail\.com/i.test(data),
+          });
+        });
+      })
+      .on('error', (err) => {
+        resolve({ path, statusCode: 'ERROR', error: err.message });
       });
-    }).on('error', (err) => {
-      resolve({ path, statusCode: 'ERROR', error: err.message });
-    });
   });
 }
 
 async function run() {
-  console.log(`Auditing Vercel Preview Deployment: ${baseUrl}`);
+  console.log(`Auditing Deployment Target: ${baseUrl}`);
   console.log('='.repeat(70));
 
   let passed = 0;
@@ -57,13 +63,15 @@ async function run() {
 
   for (const path of routes) {
     const res = await checkRoute(path);
-    if (res.statusCode === 200) {
+    if (res.statusCode === 200 && !res.hasGmailLeak) {
       passed++;
-      const founderInfo = res.hasFounderName ? ' [Found: Sahil Maisuria (Elliot PXT)]' : '';
-      console.log(`✅ [200 OK] ${path.padEnd(30)} (${res.contentType})${founderInfo}`);
+      const brandInfo = res.hasPublicIdentity ? ' [Identity: Elliot / PXT]' : '';
+      console.log(`PASS [200 OK] ${path.padEnd(30)} (${res.contentType})${brandInfo}`);
     } else {
       failed++;
-      console.log(`❌ [${res.statusCode}] ${path.padEnd(30)} -> ${res.location || res.error || ''}`);
+      console.log(
+        `FAIL [${res.statusCode}] ${path.padEnd(30)} -> ${res.hasGmailLeak ? 'EMAIL_LEAK' : res.location || res.error || ''}`
+      );
     }
   }
 

@@ -56,3 +56,47 @@
 .animate-spin-slow {
   animation: spinSlow 24s linear infinite;
 }
+
+/* WCAG 2.2 AA Accessibility & Reduced Motion Rules */
+:focus-visible,
+.a11y-enhanced-focus *:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+html.a11y-text-large {
+  font-size: 112.5%;
+}
+
+html.a11y-text-xlarge {
+  font-size: 125%;
+}
+
+html.a11y-high-contrast body {
+  background-color: #02040a;
+  color: #ffffff;
+}
+
+html.a11y-high-contrast * {
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+html.a11y-reduced-motion *,
+html.a11y-reduced-motion *::before,
+html.a11y-reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -86,9 +86,14 @@ export default function UrlGuardPage() {
       <GlassCard className="p-6 border-brand-blue/30 flex flex-col gap-4">
         <form onSubmit={handleScan} className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Globe className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+            <label htmlFor="url-guard-input" className="sr-only">
+              Target URL to inspect
+            </label>
+            <Globe className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" aria-hidden="true" />
             <input
+              id="url-guard-input"
               type="text"
+              aria-label="Target URL to inspect"
               value={inputUrl}
               onChange={(e) => setInputUrl(e.target.value)}
               placeholder="Enter suspicious URL or domain (e.g. https://example.com/login?token=abc)"

@@ -32,18 +32,18 @@ export default function OrganizationPage() {
       <div className="flex flex-col gap-8 animate-fadeIn max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-3xl font-black text-white flex items-center gap-2">
                 <Building2 className="w-8 h-8 text-brand-cyan" />
-                XTRACY for Organizations
+                XTRACY Workspace Mode (UI Preview)
               </h1>
-              <Badge type="productStatus" value="STRICT TENANT ISOLATION" size="sm" />
+              <Badge type="productStatus" value="UI PREVIEW" size="sm" />
             </div>
-            <DataStorageBadge status="PERSISTENT" />
+            <DataStorageBadge status="TEMPORARY" />
           </div>
           <p className="text-xs text-gray-400">
-            Team threat management, member role-based access control (Owner, Admin, Analyst, Viewer), and organization case privacy.
+            Interactive UI preview demonstrating role-based workspace views (Owner, Admin, Analyst, Viewer). XTRACY is independently developed and operated by sole founder Elliot (PhantomXTrace / PXT); sample seats shown here are illustrative UI placeholders, not an actual registered organization or workforce.
           </p>
         </div>
 
@@ -64,11 +64,14 @@ export default function OrganizationPage() {
               </div>
             </GlassCard>
 
-            {/* Member Management */}
+            {/* Sample Role Preview */}
             <GlassCard className="md:col-span-2 p-6 border-gray-800 flex flex-col gap-4">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider text-brand-cyan flex items-center gap-2">
-                <Users className="w-4 h-4" /> Team Member Roster & Role Permissions
+                <Users className="w-4 h-4" /> Sample Role Seats (UI Preview)
               </h3>
+              <p className="text-[11px] text-amber-300/90 bg-amber-950/30 border border-amber-800/50 rounded-lg px-3 py-2">
+                Preview notice: XTRACY is built and operated by sole founder Elliot (PhantomXTrace / PXT). No external employees or multi-member organization accounts exist in this workspace.
+              </p>
 
               <div className="flex flex-col gap-2 text-xs">
                 {org.members?.map((m: any) => (
@@ -78,7 +81,7 @@ export default function OrganizationPage() {
                       <span className="text-[11px] text-gray-400">{m.email}</span>
                     </div>
                     <span className="px-2.5 py-0.5 rounded bg-brand-blue/20 text-brand-cyan font-bold text-[10px] border border-brand-cyan/40">
-                      ROLE: {m.role}
+                      PREVIEW ROLE: {m.role}
                     </span>
                   </div>
                 ))}

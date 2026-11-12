@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [oauthNote, setOauthNote] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
@@ -74,10 +75,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1 text-xs">
-            <label className="font-bold text-gray-300">Email Address:</label>
+            <label htmlFor="login-email-input" className="font-bold text-gray-300">Email Address:</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
               <input
+                id="login-email-input"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -90,7 +92,7 @@ export default function LoginPage() {
 
           <div className="flex flex-col gap-1 text-xs">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-gray-300">Password:</label>
+              <label htmlFor="login-password-input" className="font-bold text-gray-300">Password:</label>
               <Link href="/forgot-password" className="text-brand-cyan hover:underline text-[11px]">
                 Forgot password?
               </Link>
@@ -98,6 +100,7 @@ export default function LoginPage() {
             <div className="relative">
               <Lock className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
               <input
+                id="login-password-input"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -118,16 +121,26 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* OAuth Placeholder */}
+        {/* OAuth Configuration Notice */}
         <div className="pt-2 border-t border-gray-800 flex flex-col gap-3">
           <button
             type="button"
-            onClick={() => alert('OAuth Integration (Google Sign-In) ready for production provider configuration.')}
+            onClick={() =>
+              setOauthNote(
+                'Google OAuth is unavailable on this instance until OAuth client ID/secret environment variables are configured.'
+              )
+            }
             className="w-full py-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800 border border-gray-800 text-xs font-semibold text-gray-300 transition-all flex items-center justify-center gap-2"
           >
             <ShieldCheck className="w-4 h-4 text-brand-cyan" />
-            <span>Continue with Google OAuth (Provider Ready)</span>
+            <span>Continue with Google OAuth (Unconfigured)</span>
           </button>
+
+          {oauthNote && (
+            <p role="status" className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-800/50 rounded-xl p-2.5 text-center">
+              {oauthNote}
+            </p>
+          )}
 
           <div className="text-center text-xs text-gray-400 mt-2">
             Don&apos;t have an account?{' '}

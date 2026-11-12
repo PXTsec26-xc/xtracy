@@ -1,22 +1,17 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { analyzeScamContent } from '@/lib/scamRules';
-import { checkRateLimit } from '@/lib/server/rateLimit';
+import { enforceRateLimit, parseBoundedJsonBody } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
-  const rate = checkRateLimit(ip);
+  const limited = enforceRateLimit(req, 'api-scan', 40);
+  if (limited) return limited;
 
-  if (!rate.success) {
-    return createApiResponse({
-      error: { code: 'TOO_MANY_REQUESTS', message: 'Rate limit exceeded. Please wait before scanning again.' },
-      status: 429,
-    });
-  }
+  const { data: body, error } = await parseBoundedJsonBody<{ content?: string; inputType?: string }>(req, 32768);
+  if (error) return error;
 
   try {
-    const body = await req.json();
-    const { content, inputType = 'text' } = body;
+    const { content, inputType = 'text' } = body || {};
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return createApiResponse({
@@ -37,7 +32,7 @@ export async function POST(req: NextRequest) {
     return createApiResponse({
       data: analysis,
       dataTrust: {
-        status: 'LIVE',
+        status: 'LOCAL',
         sourceName: 'XTRACY Server Heuristic Risk Analyzer Engine',
         lastRefreshed: new Date().toISOString(),
       },

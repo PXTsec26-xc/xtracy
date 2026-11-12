@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
-import { safeHttpFetch, validateUrlForSSRFAsync } from '@/lib/ssrfProtection';
+import { safeHttpFetch } from '@/lib/ssrfProtection';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError, XTRACY_USER_AGENT_BASE } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-security-txt', 30);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ domain?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { domain = '' } = body;
+    const { domain = '' } = body || {};
 
     if (!domain || typeof domain !== 'string') {
       return createApiResponse({
@@ -27,7 +33,7 @@ export async function POST(req: NextRequest) {
     for (const url of candidateUrls) {
       try {
         const { response } = await safeHttpFetch(url, {
-          headers: { 'User-Agent': 'XTRACY-SecurityTxt-Checker/1.0 (+https://xtracy.org)' },
+          headers: { 'User-Agent': `XTRACY-SecurityTxt-Checker/1.0 (+${XTRACY_USER_AGENT_BASE})` },
         });
 
         if (response.ok) {
@@ -130,7 +136,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `security.txt check failed: ${err.message}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'security.txt inspection failed.') },
       status: 500,
     });
   }

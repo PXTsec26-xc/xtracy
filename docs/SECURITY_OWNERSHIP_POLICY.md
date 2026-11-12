@@ -1,10 +1,10 @@
 # SECURITY OWNERSHIP & DEFENSIVE USAGE POLICY
 
 **Project**: XTRACY Cybersecurity Intelligence Platform
-**Owner / Maintainer**: Sahil Maisuria (Elliot PXT)
-**Organization**: PhantomXTrace (PXT)
-**Policy Version**: 2.1
-**Effective Date**: November 10, 2026
+**Sole Founder & Maintainer**: Elliot | PhantomXTrace (PXT) | Sole Founder
+**Founder Designation**: Elliot PXT sec26
+**Policy Version**: 2.2
+**Effective Date**: November 2026
 
 ---
 

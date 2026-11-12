@@ -7,7 +7,7 @@
 **Live Production URL**: `https://xtracy.vercel.app`
 **Git Repository**: `https://github.com/PXTsec26-xc/xtracy.git` (`main` branch)
 **Git Commit Hash**: `386330a`
-**Founder & Creator**: Elliot (PXT sec26 Sahil)
+**Founder & Creator**: Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`)
 **Date of Audit & Verification**: September 13, 2026
 
 ---
@@ -77,7 +77,7 @@
 ### 1. Document Control
 - **Document Title**: XTRACY Master Technical Documentation & Verification Dossier
 - **Evidence Reference**: `EVD-DOC-CTRL-001`
-- **Author**: XTRACY Core Security Engineering Team & Founder Elliot (PXT sec26 Sahil)
+- **Author**: Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`)
 - **Status**: Officially Verified Master Release
 
 ### 2. Version Information

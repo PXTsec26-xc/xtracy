@@ -1,6 +1,13 @@
 import { NextRequest } from 'next/server';
 import dns from 'dns';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { safeHttpFetch, validateUrlForSSRFAsync } from '@/lib/ssrfProtection';
+import {
+  enforceRateLimit,
+  parseBoundedJsonBody,
+  sanitizePublicError,
+  XTRACY_USER_AGENT_BASE,
+} from '@/lib/server/securityUtils';
 
 interface ProfileCheckResult {
   platform: string;
@@ -11,13 +18,21 @@ interface ProfileCheckResult {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { target = '', queryType = 'USERNAME' } = body;
+  const rateErr = enforceRateLimit(req, 'tools-footprint-checker', 25);
+  if (rateErr) return rateErr;
 
-    if (!target || typeof target !== 'string') {
+  try {
+    const { data: body, error: parseErr } = await parseBoundedJsonBody<{
+      target?: string;
+      queryType?: string;
+    }>(req, 4096);
+    if (parseErr) return parseErr;
+
+    const { target = '', queryType = 'USERNAME' } = body || {};
+
+    if (!target || typeof target !== 'string' || target.length > 255) {
       return createApiResponse({
-        error: { code: 'BAD_REQUEST', message: 'Target username or domain is required.' },
+        error: { code: 'BAD_REQUEST', message: 'A valid target username or domain (max 255 chars) is required.' },
         status: 400,
       });
     }
@@ -25,9 +40,19 @@ export async function POST(req: NextRequest) {
     const cleanInput = target.trim();
 
     if (queryType === 'DOMAIN') {
-      let domain = cleanInput.toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      const domain = cleanInput.toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      const ssrfCheck = await validateUrlForSSRFAsync(`https://${domain}`);
+      if (!ssrfCheck.allowed) {
+        return createApiResponse({
+          error: {
+            code: 'SSRF_RESTRICTED',
+            message: ssrfCheck.reason || 'Target domain restricted by security policy.',
+          },
+          status: 400,
+        });
+      }
 
-      // Domain footprint analysis: DNS, security.txt, robots.txt, MX, SPF, DMARC
+      // Domain footprint analysis: DNS, security.txt, MX, SPF, DMARC
       const checks: { name: string; status: 'FOUND' | 'MISSING' | 'SECURED'; detail: string }[] = [];
 
       let hasMx = false;
@@ -67,12 +92,12 @@ export async function POST(req: NextRequest) {
         checks.push({ name: 'DMARC Policy', status: 'MISSING', detail: 'No _dmarc record detected.' });
       }
 
-      // Check security.txt presence
+      // Check security.txt presence via SSRF-safe & DNS-pinned helper
       let securityTxtFound = false;
       try {
-        const secRes = await fetch(`https://${domain}/.well-known/security.txt`, {
+        const { response: secRes } = await safeHttpFetch(`https://${domain}/.well-known/security.txt`, {
           method: 'HEAD',
-          signal: AbortSignal.timeout(3000),
+          headers: { 'User-Agent': `XTRACY-OSINT-Checker/1.0 (+${XTRACY_USER_AGENT_BASE})` },
         });
         if (secRes.ok) {
           securityTxtFound = true;
@@ -81,7 +106,7 @@ export async function POST(req: NextRequest) {
           checks.push({ name: 'Security.txt (RFC 9116)', status: 'MISSING', detail: 'Not published at /.well-known/security.txt' });
         }
       } catch {
-        checks.push({ name: 'Security.txt (RFC 9116)', status: 'MISSING', detail: 'Endpoint unreachable.' });
+        checks.push({ name: 'Security.txt (RFC 9116)', status: 'MISSING', detail: 'Endpoint unreachable or restricted.' });
       }
 
       return createApiResponse({
@@ -137,7 +162,7 @@ export async function POST(req: NextRequest) {
 
           const res = await fetch(checkUrl, {
             headers: {
-              'User-Agent': 'XTRACY-OSINT-Checker/1.0 (+https://xtracy.org)',
+              'User-Agent': `XTRACY-OSINT-Checker/1.0 (+${XTRACY_USER_AGENT_BASE})`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -208,9 +233,12 @@ export async function POST(req: NextRequest) {
         lastRefreshed: new Date().toISOString(),
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `Footprint lookup failed: ${err.message || 'Unknown error'}` },
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: sanitizePublicError(err, 'Footprint lookup failed due to a network or processing error.'),
+      },
       status: 500,
     });
   }

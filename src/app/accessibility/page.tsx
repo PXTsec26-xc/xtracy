@@ -33,7 +33,7 @@ export default function AccessibilityCenterPage() {
             <Eye className="w-8 h-8 text-brand-cyan" />
             XTRACY Accessibility Center
           </h1>
-          <Badge type="productStatus" value="WCAG 2.1 COMPLIANCE" size="sm" />
+          <Badge type="productStatus" value="WCAG 2.2 AA CONTROLS" size="sm" />
         </div>
         <p className="text-xs text-gray-400">
           Customize display contrast, font sizing, keyboard focus outlines, motion settings, and screen reader announcements.
@@ -52,11 +52,13 @@ export default function AccessibilityCenterPage() {
           <div className="flex gap-2">
             {[
               { key: 'normal', label: 'Normal (100%)' },
-              { key: 'large', label: 'Large (115%)' },
-              { key: 'xlarge', label: 'X-Large (130%)' },
+              { key: 'large', label: 'Large (112.5%)' },
+              { key: 'xlarge', label: 'X-Large (125%)' },
             ].map(({ key, label }) => (
               <button
                 key={key}
+                type="button"
+                aria-pressed={textSize === key}
                 onClick={() => handleTextSizeChange(key as any)}
                 className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${
                   textSize === key
@@ -80,6 +82,8 @@ export default function AccessibilityCenterPage() {
             <p className="text-xs text-gray-400">Enhance text borders and contrast ratios for low-vision readability.</p>
           </div>
           <button
+            type="button"
+            aria-pressed={highContrast}
             onClick={() => {
               toggleHighContrast();
               announce(`High contrast mode ${!highContrast ? 'enabled' : 'disabled'}.`);
@@ -105,6 +109,8 @@ export default function AccessibilityCenterPage() {
             <p className="text-xs text-gray-400">Disable background animations, transitions, and pulsing highlights.</p>
           </div>
           <button
+            type="button"
+            aria-pressed={highContrast}
             onClick={() => {
               toggleReducedMotion();
               announce(`Reduced motion mode ${!reducedMotion ? 'enabled' : 'disabled'}.`);
@@ -130,6 +136,8 @@ export default function AccessibilityCenterPage() {
             <p className="text-xs text-gray-400">Display prominent high-visibility outlines when navigating via keyboard Tab.</p>
           </div>
           <button
+            type="button"
+            aria-pressed={highContrast}
             onClick={() => {
               toggleEnhancedFocus();
               announce(`Enhanced focus ring ${!enhancedFocus ? 'enabled' : 'disabled'}.`);

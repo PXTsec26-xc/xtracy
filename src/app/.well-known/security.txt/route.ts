@@ -4,12 +4,11 @@ export async function GET() {
   const expiresDate = new Date();
   expiresDate.setFullYear(expiresDate.getFullYear() + 1);
 
-  const securityTxtContent = `Contact: mailto:security@xtracy.org
+  const securityTxtContent = `Contact: https://xtracy.vercel.app/security
 Expires: ${expiresDate.toISOString()}
 Preferred-Languages: en
-Canonical: https://xtracy.org/.well-known/security.txt
-Policy: https://xtracy.org/security
-Hiring: https://xtracy.org/founder
+Canonical: https://xtracy.vercel.app/.well-known/security.txt
+Policy: https://xtracy.vercel.app/trust
 `;
 
   return new NextResponse(securityTxtContent, {

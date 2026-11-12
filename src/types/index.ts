@@ -5,7 +5,7 @@ export type ConfidenceLevel = 'Developing' | 'Verified' | 'Officially Confirmed'
 export type RelevanceLevel = 'Not Relevant' | 'Possibly Relevant' | 'Highly Relevant';
 export type ReadingMode = 'BEGINNER' | 'STUDENT' | 'PROFESSIONAL';
 
-export type DataTrustStatus = 'LIVE' | 'CACHED' | 'FALLBACK' | 'DEMO';
+export type DataTrustStatus = 'LIVE' | 'CACHED' | 'FALLBACK' | 'DEMO' | 'LOCAL';
 
 export interface DataTrustInfo {
   status: DataTrustStatus;

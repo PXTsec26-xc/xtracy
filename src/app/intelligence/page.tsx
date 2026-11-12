@@ -30,7 +30,13 @@ export default function IntelligencePage() {
               setDataTrustStatus(json.dataTrust.status || 'LIVE');
               setSourceName(json.dataTrust.sourceName || 'CISA KEV Live Feed');
             }
+          } else {
+            setDataTrustStatus('FALLBACK');
+            setSourceName('Curated Security Advisories');
           }
+        } else {
+          setDataTrustStatus('FALLBACK');
+          setSourceName('Curated Security Advisories');
         }
       } catch (err) {
         // Fallback to verified curated advisories
@@ -82,8 +88,12 @@ export default function IntelligencePage() {
       {/* Filter & Search Bar */}
       <GlassCard className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-brand-blue/30">
         <div className="relative w-full sm:w-72">
+          <label htmlFor="intel-search-input" className="sr-only">
+            Search threat intelligence reports
+          </label>
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
           <input
+            id="intel-search-input"
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

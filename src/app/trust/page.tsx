@@ -43,7 +43,11 @@ export default function TrustCenterPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-800 text-xs font-bold">
+      <div
+        role="tablist"
+        aria-label="Trust Center sections"
+        className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-800 text-xs font-bold"
+      >
         {[
           { key: 'privacy', label: 'Privacy Policy', icon: Lock },
           { key: 'security', label: 'Security Architecture', icon: Server },
@@ -53,6 +57,9 @@ export default function TrustCenterPage() {
         ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === key}
             onClick={() => setActiveTab(key as any)}
             className={`px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all whitespace-nowrap ${
               activeTab === key
@@ -80,7 +87,7 @@ export default function TrustCenterPage() {
             </p>
             <h3 className="text-sm font-bold text-brand-cyan">2. WebCrypto Safe Vault Encryption</h3>
             <p>
-              Vault notes are encrypted client-side using AES-GCM 256-bit with PBKDF2 key derivation (100,000 iterations). Only ciphertext, IV, and salt values are stored server-side. XTRACY staff cannot decrypt vault contents.
+              Vault notes are encrypted client-side using AES-GCM 256-bit with PBKDF2-HMAC-SHA256 key derivation (310,000 iterations by default). Ciphertext, IV, and salt stay in local browser storage, so neither XTRACY servers nor external operators can decrypt vault contents without the user&apos;s passphrase.
             </p>
           </div>
         )}

@@ -1,59 +1,53 @@
-// XTRACY PWA Service Worker (Offline Incident Triage & Emergency Numbers Cache)
+// XTRACY Offline Emergency PWA Service Worker
+// Caches critical emergency safety guides for offline viewing
 
-const CACHE_NAME = 'xtracy-pwa-v4-cache';
-const EMERGENCY_URLS = [
+const CACHE_NAME = 'xtracy-pwa-v5-cache';
+const STATIC_ASSETS = [
   '/',
   '/emergency',
+  '/global-safety',
   '/womens-safety',
   '/manifest.json',
   '/favicon.ico',
 ];
 
-self.addEventListener('install', (event: any) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(EMERGENCY_URLS);
+      return cache.addAll(STATIC_ASSETS);
     })
   );
-  (self as any).skipWaiting();
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', (event: any) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
+          return Promise.resolve();
         })
       );
     })
   );
-  (self as any).clients.claim();
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event: any) => {
+self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+  // Never cache dynamic API responses
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          return caches.match('/emergency');
-        });
-      })
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
   );
 });

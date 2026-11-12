@@ -1,20 +1,20 @@
 # NOTICE
 
 **XTRACY Cybersecurity Intelligence Platform**
-**Founder & Original Author**: Elliot PXT (PhantomXTrace Founder)
-**Organization / Research Identity**: PhantomXTrace (PXT)
+**Founder & Sole Owner**: Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`)
+**Brand Identity**: PhantomXTrace (PXT)
 **Official Repository**: https://github.com/PXTsec26-xc/xtracy
 **Official Website**: https://xtracy.vercel.app
-**Copyright Notice**: Copyright (c) 2026 Elliot PXT (PhantomXTrace). All rights reserved, subject to applicable third-party licences.
+**Copyright Notice**: Copyright (c) 2026 Elliot | PhantomXTrace (PXT). All rights reserved, subject to applicable third-party licences.
 
 ---
 
 ## 1. Project Identity & Attribution
 
-XTRACY is an independent cybersecurity and digital safety intelligence platform conceived, architected, and authored by **Elliot PXT**, who develops and publishes security research under the collective identity **PhantomXTrace (PXT)**.
+XTRACY is an independent cybersecurity and digital safety intelligence platform conceived, architected, and authored by sole founder **Elliot** (`Elliot PXT sec26`) under the **PhantomXTrace (PXT)** brand identity.
 
-- **Founder & Lead Architect**: Elliot PXT
-- **Research & Development Identity**: PhantomXTrace (PXT)
+- **Sole Founder & Architect**: Elliot (`Elliot PXT sec26`)
+- **Brand Identity**: PhantomXTrace (PXT)
 - **Primary Product**: XTRACY
 - **Product Scope**: Independent Defensive Cybersecurity & Digital Safety Intelligence Platform
 

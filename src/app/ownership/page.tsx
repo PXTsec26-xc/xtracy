@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 
 export default function OwnershipPage() {
   const commitMilestones = [
-    { hash: 'e73e99e', date: '2026-10-01', author: 'Elliot', desc: 'docs: professionalize repository (26 security tests, STRIDE threat model, master dossier)' },
+    { hash: 'e73e99e', date: '2026-10-01', author: 'Elliot', desc: 'docs: add security test suite, STRIDE threat model, and architecture documentation' },
     { hash: '386330a', date: '2026-09-13', author: 'Elliot', desc: 'feat: complete XTRACY Final Ascension build with Graph Engine, Temporal Intel, Security Twin' },
     { hash: 'fac654c', date: '2026-08-27', author: 'Elliot', desc: 'style: implement Executive Security theme, glass UI system, and geometric logo' },
     { hash: '8b3a300', date: '2026-08-27', author: 'PXTsec26-xc', desc: 'Enhance founder section in README' },
@@ -51,7 +51,7 @@ export default function OwnershipPage() {
               <ShieldCheck className="w-8 h-8 text-emerald-400" />
               Declaration of Ownership &amp; Codebase Origin
             </h1>
-            <Badge type="productStatus" value="PROVENANCE VERIFIED" size="sm" />
+            <Badge type="productStatus" value="SOLE FOUNDER RECORD" size="sm" />
           </div>
           <span className="text-xs text-sky-400 font-mono font-semibold">
             Founder of PhantomXTrace (PXT)
@@ -79,7 +79,7 @@ export default function OwnershipPage() {
           1. Declaration of Original Authorship
         </h2>
         <p>
-          I, <strong>Elliot PXT sec26</strong> (Founder of PhantomXTrace (PXT), operating under the research collective <strong>PhantomXTrace (PXT)</strong>), declare that the foundational architecture, custom risk heuristic algorithms, defensive network filters, client-side cryptographic integrations, and user interfaces of XTRACY were originally conceived, architected, and implemented by me.
+          I, <strong>Elliot</strong> (Sole Founder — <strong>Elliot PXT sec26</strong>, operating under the <strong>PhantomXTrace (PXT)</strong> brand identity), declare that the foundational architecture, custom risk heuristic algorithms, defensive network filters, client-side cryptographic integrations, and user interfaces of XTRACY were originally conceived, architected, and implemented solely by me.
         </p>
         <div className="p-4 rounded-xl bg-darkBg-panel border border-gray-800 text-[11px] leading-relaxed flex flex-col gap-2">
           <strong className="text-emerald-300 font-sans uppercase">Legal Distinction Notice:</strong>

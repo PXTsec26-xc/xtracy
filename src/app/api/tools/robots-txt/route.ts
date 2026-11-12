@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { safeHttpFetch } from '@/lib/ssrfProtection';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError, XTRACY_USER_AGENT_BASE } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-robots-txt', 30);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ domain?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { domain = '' } = body;
+    const { domain = '' } = body || {};
 
     if (!domain || typeof domain !== 'string') {
       return createApiResponse({
@@ -20,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { response: res } = await safeHttpFetch(robotsUrl, {
-        headers: { 'User-Agent': 'XTRACY-Robots-Inspector/1.0 (+https://xtracy.org)' },
+        headers: { 'User-Agent': `XTRACY-Robots-Inspector/1.0 (+${XTRACY_USER_AGENT_BASE})` },
       });
 
       if (!res.ok) {
@@ -40,12 +46,13 @@ export async function POST(req: NextRequest) {
 
       rawContent = await res.text();
     } catch (err: any) {
+      const msg = sanitizePublicError(err, `Could not connect to ${robotsUrl}.`);
       return createApiResponse({
         error: {
           code: 'FETCH_ERROR',
-          message: err.message.includes('SSRF') ? err.message : `Could not connect to ${robotsUrl}: ${err.message}`,
+          message: msg,
         },
-        status: err.message.includes('SSRF') ? 400 : 502,
+        status: msg.startsWith('SSRF Blocked:') ? 400 : 502,
       });
     }
 
@@ -116,7 +123,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `robots.txt parse failed: ${err.message}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'robots.txt inspection failed.') },
       status: 500,
     });
   }

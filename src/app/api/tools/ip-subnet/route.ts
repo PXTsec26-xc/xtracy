@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import dns from 'dns';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError } from '@/lib/server/securityUtils';
 
 function ipv4ToInt(ip: string): number {
   return ip.split('.').reduce((acc, octet) => ((acc << 8) + parseInt(octet, 10)) >>> 0, 0);
@@ -11,9 +12,14 @@ function intToIpv4(int: number): string {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-ip-subnet', 40);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ input?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { input = '' } = body;
+    const { input = '' } = body || {};
 
     if (!input || typeof input !== 'string') {
       return createApiResponse({
@@ -135,7 +141,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `Subnet calculation error: ${err.message}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'Subnet calculation error.') },
       status: 500,
     });
   }

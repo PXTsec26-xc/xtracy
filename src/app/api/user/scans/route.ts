@@ -2,12 +2,15 @@ import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
 import { DbScanHistoryItem } from '@/lib/server/models';
-
-// In-memory fallback persistence store for user scans
-const userScansStore = new Map<string, DbScanHistoryItem[]>();
+import { userScansStore } from '@/lib/server/memoryStores';
+import { enforceRateLimit, extractBearerToken, parseBoundedJsonBody } from '@/lib/server/securityUtils';
+import crypto from 'node:crypto';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-scans-get', 60);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -22,15 +25,18 @@ export async function GET(req: NextRequest) {
   return createApiResponse({
     data: items,
     dataTrust: {
-      status: 'LIVE',
-      sourceName: 'XTRACY Persistent User Scan Repository',
+      status: 'LOCAL',
+      sourceName: 'XTRACY Ephemeral Session Scan Store',
       lastRefreshed: new Date().toISOString(),
     },
   });
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-scans-post', 40);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -40,38 +46,44 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  try {
-    const body = await req.json();
-    const { inputType, inputSample, riskScore, riskLevel, warningSignsCount } = body;
+  const { data: body, error } = await parseBoundedJsonBody<Record<string, any>>(req, 32768);
+  if (error) return error;
 
-    const newItem: DbScanHistoryItem = {
-      id: 'scan-' + Date.now(),
-      userId: user.id,
-      inputType: inputType || 'text',
-      inputSample: inputSample ? inputSample.substring(0, 150) : '',
-      riskScore: typeof riskScore === 'number' ? riskScore : 0,
-      riskLevel: riskLevel || 'LOW',
-      warningSignsCount: typeof warningSignsCount === 'number' ? warningSignsCount : 0,
-      analyzedAt: new Date().toISOString(),
-      storageStatus: 'PERSISTENT',
-    };
+  const { inputType, inputSample, riskScore, riskLevel, warningSignsCount } = body || {};
 
-    const existing = userScansStore.get(user.id) || [];
-    userScansStore.set(user.id, [newItem, ...existing]);
+  const resolvedInputType: DbScanHistoryItem['inputType'] = ['url', 'text', 'email'].includes(inputType) ? inputType : 'text';
+  const resolvedRiskLevel: DbScanHistoryItem['riskLevel'] = ['LOW', 'MEDIUM', 'HIGH'].includes(riskLevel) ? riskLevel : 'LOW';
 
-    return createApiResponse({
-      data: newItem,
-    });
-  } catch (err) {
-    return createApiResponse({
-      error: { code: 'BAD_REQUEST', message: 'Invalid scan payload.' },
-      status: 400,
-    });
-  }
+  const newItem: DbScanHistoryItem = {
+    id: 'scan-' + crypto.randomBytes(6).toString('hex'),
+    userId: user.id,
+    inputType: resolvedInputType,
+    inputSample: typeof inputSample === 'string' ? inputSample.substring(0, 150) : '',
+    riskScore: typeof riskScore === 'number' && Number.isFinite(riskScore) ? riskScore : 0,
+    riskLevel: resolvedRiskLevel,
+    warningSignsCount: typeof warningSignsCount === 'number' && Number.isFinite(warningSignsCount) ? warningSignsCount : 0,
+    analyzedAt: new Date().toISOString(),
+    storageStatus: 'SESSION_ONLY',
+  };
+
+  const existing = userScansStore.get(user.id) || [];
+  userScansStore.set(user.id, [newItem, ...existing].slice(0, 200));
+
+  return createApiResponse({
+    data: newItem,
+    dataTrust: {
+      status: 'LOCAL',
+      sourceName: 'XTRACY Ephemeral Session Scan Store',
+      lastRefreshed: new Date().toISOString(),
+    },
+  });
 }
 
 export async function DELETE(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-scans-delete', 30);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {

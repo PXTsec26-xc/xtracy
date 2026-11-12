@@ -38,13 +38,13 @@ export default function PressPage() {
   const quickFacts = [
     { label: 'Official Product Name', value: 'XTRACY' },
     { label: 'Product Category', value: 'Defensive Cybersecurity & Digital Intelligence Platform' },
-    { label: 'Founder & Creator', value: 'Elliot PXT sec26' },
-    { label: 'Designation / Role', value: 'Founder of PhantomXTrace (PXT)' },
-    { label: 'Research Initiative', value: 'PhantomXTrace (PXT)' },
+    { label: 'Founder & Owner', value: 'Elliot | PhantomXTrace (PXT) | Sole Founder' },
+    { label: 'Founder Designation', value: 'Elliot PXT sec26' },
+    { label: 'Brand Identity', value: 'PhantomXTrace (PXT)' },
     { label: 'Live Deployment', value: 'https://xtracy.vercel.app' },
     { label: 'Source Repository', value: 'https://github.com/PXTsec26-xc/xtracy' },
-    { label: 'Flagship Tool Count', value: '18 Functional Defensive Tools' },
-    { label: 'Security Unit Tests', value: '26 Strict Automated Tests (0 Failures)' },
+    { label: 'Defensive Tool Hub', value: '31 Dedicated Security Tools (/tools)' },
+    { label: 'Automated Verification', value: 'Cryptographic, SSRF & Route Test Suites' },
     { label: 'Client Vault Engine', value: 'WebCrypto AES-GCM 256-bit + PBKDF2' },
   ];
 

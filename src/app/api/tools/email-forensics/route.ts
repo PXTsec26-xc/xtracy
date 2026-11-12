@@ -1,10 +1,16 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { enforceRateLimit, parseBoundedJsonBody } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-email-forensics', 40);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ rawHeaders?: string }>(req, 131072);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { rawHeaders = '' } = body;
+    const { rawHeaders = '' } = body || {};
 
     if (!rawHeaders || typeof rawHeaders !== 'string' || rawHeaders.trim().length === 0) {
       return createApiResponse({

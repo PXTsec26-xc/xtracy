@@ -2,11 +2,15 @@ import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
 import { DbVaultNote } from '@/lib/server/models';
-
-const userVaultStore = new Map<string, DbVaultNote[]>();
+import { userVaultStore } from '@/lib/server/memoryStores';
+import { enforceRateLimit, extractBearerToken, parseBoundedJsonBody } from '@/lib/server/securityUtils';
+import crypto from 'node:crypto';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-vault-get', 60);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -21,7 +25,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-vault-post', 40);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -31,44 +38,49 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  try {
-    const body = await req.json();
-    const { title, category, encryptedContent, iv, salt } = body;
+  const { data: body, error } = await parseBoundedJsonBody<Record<string, any>>(req, 65536);
+  if (error) return error;
 
-    if (!encryptedContent || !iv || !salt) {
-      return createApiResponse({
-        error: { code: 'BAD_REQUEST', message: 'Encrypted payload (encryptedContent, iv, salt) is required.' },
-        status: 400,
-      });
-    }
+  const { title, category, encryptedContent, iv, salt } = body || {};
 
-    const newItem: DbVaultNote = {
-      id: 'vault-' + Date.now(),
-      userId: user.id,
-      title: title || 'Encrypted Note',
-      category: category || 'General Safety Note',
-      encryptedContent,
-      iv,
-      salt,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      storageStatus: 'PERSISTENT',
-    };
-
-    const existing = userVaultStore.get(user.id) || [];
-    userVaultStore.set(user.id, [newItem, ...existing]);
-
-    return createApiResponse({ data: newItem });
-  } catch (err) {
+  if (
+    typeof encryptedContent !== 'string' ||
+    typeof iv !== 'string' ||
+    typeof salt !== 'string' ||
+    !encryptedContent ||
+    !iv ||
+    !salt
+  ) {
     return createApiResponse({
-      error: { code: 'BAD_REQUEST', message: 'Invalid payload.' },
+      error: { code: 'BAD_REQUEST', message: 'Encrypted payload (encryptedContent, iv, salt) is required.' },
       status: 400,
     });
   }
+
+  const newItem: DbVaultNote = {
+    id: 'vault-' + crypto.randomBytes(6).toString('hex'),
+    userId: user.id,
+    title: typeof title === 'string' && title.trim() ? title.trim().slice(0, 120) : 'Encrypted Note',
+    category: typeof category === 'string' && category.trim() ? category.trim().slice(0, 60) : 'General Safety Note',
+    encryptedContent,
+    iv,
+    salt,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    storageStatus: 'SESSION_ONLY',
+  };
+
+  const existing = userVaultStore.get(user.id) || [];
+  userVaultStore.set(user.id, [newItem, ...existing].slice(0, 200));
+
+  return createApiResponse({ data: newItem });
 }
 
 export async function DELETE(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-vault-delete', 30);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {

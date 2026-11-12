@@ -26,7 +26,7 @@ export function generateEvidenceRecord(
   factors: any[]
 ): EvidenceRecord {
   const analyzedAt = new Date().toISOString();
-  const caseId = `XTR-${Math.floor(100000 + Math.random() * 900000)}`;
+  const caseId = `XTR-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
   const engineVersion = 'XTRACY_NEXUS_ENGINE_v2.1';
 
   // Compute SHA-256 hash over normalized evidence payload

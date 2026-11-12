@@ -49,21 +49,42 @@ export async function queryExternalThreatIntel(
     });
   } else {
     try {
-      // In production, execute real fetch to VirusTotal v3 API
-      providers.push({
-        providerName: 'VirusTotal Intelligence API',
-        status: 'CONFIGURED',
-        detectedMalicious: false,
-        positives: 0,
-        totalEngines: 90,
-        threatDetails: 'Clean / No threat flagged across 90 security engines.',
-        queryTimestamp: now,
+      const urlId = Buffer.from(target).toString('base64url');
+      const vtRes = await fetch(`https://www.virustotal.com/api/v3/urls/${urlId}`, {
+        headers: { 'x-apikey': vtKey },
+        signal: AbortSignal.timeout(5000),
       });
-    } catch (err) {
+      if (vtRes.ok) {
+        const vtJson: any = await vtRes.json();
+        const stats = vtJson?.data?.attributes?.last_analysis_stats || {};
+        const malicious = Number(stats.malicious || 0) + Number(stats.suspicious || 0);
+        const total =
+          malicious + Number(stats.harmless || 0) + Number(stats.undetected || 0);
+        providers.push({
+          providerName: 'VirusTotal Intelligence API',
+          status: 'CONFIGURED',
+          detectedMalicious: malicious > 0,
+          positives: malicious,
+          totalEngines: total,
+          threatDetails: `VirusTotal analysis returned ${malicious} flagged engine(s) across ${total} scanned engines.`,
+          queryTimestamp: now,
+        });
+      } else {
+        providers.push({
+          providerName: 'VirusTotal Intelligence API',
+          status: vtRes.status === 404 ? 'CONFIGURED' : 'QUERY_FAILED',
+          threatDetails:
+            vtRes.status === 404
+              ? 'Target has no prior scan record in VirusTotal.'
+              : `VirusTotal API returned HTTP ${vtRes.status}.`,
+          queryTimestamp: now,
+        });
+      }
+    } catch {
       providers.push({
         providerName: 'VirusTotal Intelligence API',
         status: 'QUERY_FAILED',
-        threatDetails: 'Failed to communicate with external provider API endpoint.',
+        threatDetails: 'Failed to communicate with VirusTotal API endpoint.',
         queryTimestamp: now,
       });
     }
@@ -79,13 +100,54 @@ export async function queryExternalThreatIntel(
       queryTimestamp: now,
     });
   } else {
-    providers.push({
-      providerName: 'Google Safe Browsing API',
-      status: 'CONFIGURED',
-      detectedMalicious: false,
-      threatDetails: 'No active threat match in Safe Browsing index.',
-      queryTimestamp: now,
-    });
+    try {
+      const gsbRes = await fetch(
+        `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(gsbKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client: { clientId: 'xtracy-platform', clientVersion: '2.1' },
+            threatInfo: {
+              threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
+              platformTypes: ['ANY_PLATFORM'],
+              threatEntryTypes: ['URL'],
+              threatEntries: [{ url: target }],
+            },
+          }),
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+      if (gsbRes.ok) {
+        const gsbJson: any = await gsbRes.json();
+        const matches = Array.isArray(gsbJson?.matches) ? gsbJson.matches : [];
+        providers.push({
+          providerName: 'Google Safe Browsing API',
+          status: 'CONFIGURED',
+          detectedMalicious: matches.length > 0,
+          positives: matches.length,
+          threatDetails:
+            matches.length > 0
+              ? `Matched ${matches.length} Safe Browsing threat list(s): ${matches.map((m: any) => m.threatType).join(', ')}.`
+              : 'No active threat match returned by Google Safe Browsing API.',
+          queryTimestamp: now,
+        });
+      } else {
+        providers.push({
+          providerName: 'Google Safe Browsing API',
+          status: 'QUERY_FAILED',
+          threatDetails: `Google Safe Browsing API returned HTTP ${gsbRes.status}.`,
+          queryTimestamp: now,
+        });
+      }
+    } catch {
+      providers.push({
+        providerName: 'Google Safe Browsing API',
+        status: 'QUERY_FAILED',
+        threatDetails: 'Failed to communicate with Google Safe Browsing API endpoint.',
+        queryTimestamp: now,
+      });
+    }
   }
 
   // 3. Open Threat Intelligence (PhishTank / URLhaus)

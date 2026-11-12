@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
-import { validateUrlForSSRF } from '@/lib/ssrfProtection';
+import { safeHttpFetch, validateUrlForSSRFAsync } from '@/lib/ssrfProtection';
+import { enforceRateLimit, parseBoundedJsonBody, XTRACY_USER_AGENT_BASE } from '@/lib/server/securityUtils';
 import dns from 'dns/promises';
 
 export interface PostureFinding {
@@ -14,27 +15,42 @@ export interface PostureFinding {
 }
 
 export async function POST(req: NextRequest) {
+  const rateErr = enforceRateLimit(req, 'tools-security-posture', 20);
+  if (rateErr) return rateErr;
+
   try {
-    const body = await req.json();
-    const { url = '', authorized = false } = body;
+    const { data: body, error: parseErr } = await parseBoundedJsonBody<{
+      url?: string;
+      authorized?: boolean;
+    }>(req, 4096);
+    if (parseErr) return parseErr;
+
+    const { url = '', authorized = false } = body || {};
 
     if (!authorized) {
       return createApiResponse({
-        error: { code: 'UNAUTHORIZED_TARGET_ASSESSMENT', message: 'You must confirm authorization ownership or permission before starting a Security Posture assessment.' },
+        error: {
+          code: 'AUTHORIZATION_ATTESTATION_REQUIRED',
+          message:
+            'Please check the responsible-use authorization attestation before running a passive Security Posture check. Note: this attests operator permission and does not verify cryptographic domain ownership.',
+        },
         status: 403,
       });
     }
 
-    // 1. SSRF Protection & IP Validation
-    const ssrfCheck = validateUrlForSSRF(url);
-    if (!ssrfCheck.allowed) {
+    // 1. Async SSRF Protection, Private IP Block & DNS Resolution
+    const ssrfCheck = await validateUrlForSSRFAsync(typeof url === 'string' ? url : '');
+    if (!ssrfCheck.allowed || !ssrfCheck.normalizedUrl) {
       return createApiResponse({
-        error: { code: 'SSRF_RESTRICTED', message: ssrfCheck.reason || 'Target URL restricted by SSRF protection policies.' },
+        error: {
+          code: 'SSRF_RESTRICTED',
+          message: ssrfCheck.reason || 'Target URL restricted by SSRF protection policies.',
+        },
         status: 400,
       });
     }
 
-    const targetUrl = ssrfCheck.normalizedUrl!;
+    const targetUrl = ssrfCheck.normalizedUrl;
     const parsed = new URL(targetUrl);
     const hostname = parsed.hostname;
 
@@ -47,11 +63,11 @@ export async function POST(req: NextRequest) {
       findings.push({
         title: 'Transport Layer Security (HTTPS) Active',
         severity: 'INFORMATIONAL',
-        evidence: `Protocol: ${parsed.protocol.toUpperCase().replace(':', '')} on Port 443`,
+        evidence: `Protocol: ${parsed.protocol.toUpperCase().replace(':', '')} on Port ${parsed.port || '443'}`,
         whyItMatters: 'HTTPS encrypts data in transit between the client browser and target server, preventing eavesdropping and tampering.',
         recommendation: 'Ensure TLS 1.2 or TLS 1.3 is enforced with strong cipher suites.',
         confidence: 'HIGH',
-        limitations: 'Cipher suite preference and legacy protocol support were not exhaustively benchmarked.',
+        limitations: 'Cipher suite preference and certificate expiry require running the SSL Inspector.',
       });
     } else {
       postureScore -= 35;
@@ -62,12 +78,11 @@ export async function POST(req: NextRequest) {
         whyItMatters: 'Unencrypted HTTP traffic transmits data in plaintext, exposing users to man-in-the-middle credential interception.',
         recommendation: 'Configure an SSL/TLS certificate and enforce automatic HTTP-to-HTTPS redirection.',
         confidence: 'HIGH',
-        limitations: 'Client tested connection on default HTTP port 80.',
+        limitations: 'Target checked using supplied HTTP scheme.',
       });
     }
 
-    // 3. DNS Analysis (A, MX, TXT / SPF / DMARC)
-    let mxRecordsCount = 0;
+    // 3. DNS Analysis (TXT / SPF / DMARC)
     let hasSpf = false;
     let hasDmarc = false;
 
@@ -133,26 +148,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. security.txt Check
+    // 4. security.txt Check via DNS-pinned safeHttpFetch
     let hasSecurityTxt = false;
     try {
-      const secTxtRes = await fetch(`https://${hostname}/.well-known/security.txt`, {
+      const { response: secTxtRes } = await safeHttpFetch(`https://${hostname}/.well-known/security.txt`, {
         method: 'HEAD',
-        signal: AbortSignal.timeout(3000),
+        headers: { 'User-Agent': `XTRACY-Security-Posture/1.0 (+${XTRACY_USER_AGENT_BASE})` },
       });
       if (secTxtRes.ok) {
         hasSecurityTxt = true;
         findings.push({
           title: 'RFC 9116 security.txt Discovered',
           severity: 'INFORMATIONAL',
-          evidence: `HTTP Status: 200 OK at https://${hostname}/.well-known/security.txt`,
+          evidence: `HTTP Status: ${secTxtRes.status} at https://${hostname}/.well-known/security.txt`,
           whyItMatters: 'security.txt allows security researchers to report vulnerabilities securely.',
           recommendation: 'Keep contact details and expiration timestamps in security.txt up to date.',
           confidence: 'HIGH',
           limitations: 'File content fields were not validated against full RFC 9116 syntax.',
         });
       }
-    } catch (e) {}
+    } catch {}
 
     if (!hasSecurityTxt) {
       findings.push({

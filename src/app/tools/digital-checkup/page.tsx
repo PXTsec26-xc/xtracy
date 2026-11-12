@@ -73,8 +73,9 @@ export default function DigitalCheckupToolPage() {
               <button
                 key={key}
                 type="button"
+                aria-pressed={isChecked}
                 onClick={() => toggleAnswer(key as keyof typeof answers)}
-                className="flex items-center gap-3 p-3.5 rounded-xl bg-darkBg-panel border border-gray-800 hover:border-emerald-400/40 text-left transition-all"
+                className="flex items-center gap-3 p-3.5 rounded-xl bg-darkBg-panel border border-gray-800 hover:border-emerald-400/40 focus-visible:ring-2 focus-visible:ring-brand-cyan text-left transition-all"
               >
                 {isChecked ? (
                   <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />

@@ -52,8 +52,9 @@ export default function PrivacyScoreToolPage() {
               <button
                 key={h.id}
                 type="button"
+                aria-pressed={h.checked}
                 onClick={() => toggleHabit(h.id)}
-                className="flex items-center gap-3 p-3 rounded-xl bg-darkBg-panel border border-gray-800 hover:border-brand-cyan/40 text-left transition-all"
+                className="flex items-center gap-3 p-3 rounded-xl bg-darkBg-panel border border-gray-800 hover:border-brand-cyan/40 focus-visible:ring-2 focus-visible:ring-brand-cyan text-left transition-all"
               >
                 {h.checked ? (
                   <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />

@@ -1,6 +1,11 @@
+import { randomBytes } from 'crypto';
+
 /**
- * Environment configuration validator and default fallback manager.
+ * Environment configuration validator and safe runtime default manager.
+ * Generates an ephemeral per-process runtime secret when AUTH_SECRET is not provided.
  */
+
+const EPHEMERAL_RUNTIME_SECRET = randomBytes(32).toString('hex');
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -18,5 +23,7 @@ export const env = {
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
   VIRUSTOTAL_API_KEY: process.env.VIRUSTOTAL_API_KEY || '',
   SAFE_BROWSING_API_KEY: process.env.SAFE_BROWSING_API_KEY || '',
-  AUTH_SECRET: process.env.AUTH_SECRET || 'xtracy_dev_secret_jwt_key_2026',
+  HAVEIBEENPWNED_API_KEY: process.env.HAVEIBEENPWNED_API_KEY || '',
+  AUTH_SECRET: process.env.AUTH_SECRET || EPHEMERAL_RUNTIME_SECRET,
+  HAS_CONFIGURED_AUTH_SECRET: Boolean(process.env.AUTH_SECRET),
 };

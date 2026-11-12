@@ -2,43 +2,47 @@ import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
 import { DbSecurityAlert } from '@/lib/server/models';
+import { enforceRateLimit, extractBearerToken } from '@/lib/server/securityUtils';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'api-alerts', 60);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   const alerts: DbSecurityAlert[] = [
     {
       id: 'alt-1',
       userId: user?.id || 'public',
-      title: 'India Emergency Contact Directory Active',
+      title: 'Global Emergency & Cybercrime Directory Updated',
       severity: 'CRITICAL',
-      message: 'Immediate direct-dial emergency helplines active: 112 (Universal), 181 (Women Helpline), 100 (Police), 1930 (Cybercrime Fraud).',
-      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+      message: 'Verified official cybercrime reporting portals and emergency numbers available offline in Global Safety Center.',
+      createdAt: new Date().toISOString(),
     },
     {
       id: 'alt-2',
       userId: user?.id || 'public',
-      title: 'Active Phishing Campaign Warning: Banking KYC SMS',
+      title: 'Phishing Advisory: Urgent KYC / Account Suspension Lures',
       severity: 'HIGH',
-      message: 'Scam SMS messages falsely claiming bank account suspension are circulating. Do not click unverified links.',
-      createdAt: new Date(Date.now() - 3600000 * 8).toISOString(),
+      message: 'Verify sender domains independently using official bookmarks or XTRACY URL Guard before entering credentials.',
+      createdAt: new Date().toISOString(),
     },
     {
       id: 'alt-3',
       userId: user?.id || 'public',
-      title: 'CISA Vulnerability Catalog Feed Updated',
+      title: 'Offline Threat Intelligence Feed Notice',
       severity: 'MEDIUM',
-      message: 'New critical vulnerabilities added to CISA KEV feed. Update software to latest patches.',
-      createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+      message: 'Built-in advisory sample feed active. Check CISA KEV or your national CERT portal for real-time CVE alerts.',
+      createdAt: new Date().toISOString(),
     },
   ];
 
   return createApiResponse({
     data: alerts,
     dataTrust: {
-      status: 'LIVE',
-      sourceName: 'XTRACY In-App Notification Center',
+      status: 'FALLBACK',
+      sourceName: 'XTRACY Built-In Safety Advisory Feed',
       lastRefreshed: new Date().toISOString(),
     },
   });

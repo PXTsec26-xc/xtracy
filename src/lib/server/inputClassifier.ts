@@ -3,7 +3,7 @@
  * Classifies target inputs into VALID_URL, VALID_DOMAIN, VALID_IP, INVALID_INPUT, or RESTRICTED_TARGET.
  */
 
-import { isPrivateIp, validateUrlForSSRF } from '@/lib/ssrfProtection';
+import { isPrivateIp, validateUrlForSSRF } from '@/lib/ssrfValidation';
 
 export type InputCategory =
   | 'VALID_URL'

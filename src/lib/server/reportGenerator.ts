@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 /**
  * XTRACY Automated Security Analysis Report Generator
  * Formats printable / exportable analysis documents with Report ID, timestamp, technical evidence, and official disclaimers.
@@ -36,7 +38,7 @@ export function buildSecurityReport(payload: {
   externalIntelStatus: string;
 }): SecurityAnalysisReport {
   const generatedAt = new Date().toISOString();
-  const reportId = `REP-${Math.floor(100000 + Math.random() * 900000)}`;
+  const reportId = `REP-${randomBytes(4).toString('hex').toUpperCase()}`;
 
   const defensiveRecommendations: string[] = [];
 

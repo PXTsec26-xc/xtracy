@@ -5,17 +5,26 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { DataTrustBadge } from '@/components/ui/DataTrustBadge';
 import { DbSecurityAlert } from '@/lib/server/models';
+import { DataTrustStatus } from '@/types';
 import { Bell, ShieldAlert, CheckCircle2, Calendar, Radio } from 'lucide-react';
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<DbSecurityAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trustStatus, setTrustStatus] = useState<DataTrustStatus>('DEMO');
+  const [trustSource, setTrustSource] = useState('Curated Security Advisories');
 
   useEffect(() => {
     fetch('/api/alerts')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setAlerts(data.data);
+        if (data.success) {
+          setAlerts(data.data);
+          if (data.dataTrust) {
+            setTrustStatus(data.dataTrust.status || 'DEMO');
+            setTrustSource(data.dataTrust.sourceName || 'Curated Security Advisories');
+          }
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -24,15 +33,15 @@ export default function AlertsPage() {
     <div className="flex flex-col gap-8 animate-fadeIn max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-black text-white flex items-center gap-2">
-              <Bell className="w-8 h-8 text-amber-400 animate-pulse" />
-              Notification & In-App Alert Center
+              <Bell className="w-8 h-8 text-amber-400" />
+              Notification &amp; Security Alert Center
             </h1>
-            <Badge type="productStatus" value="LIVE BROADCAST" size="sm" />
+            <Badge type="productStatus" value="ADVISORY FEED" size="sm" />
           </div>
-          <DataTrustBadge status="LIVE" sourceName="XTRACY Alert Broadcast" />
+          <DataTrustBadge status={trustStatus} sourceName={trustSource} />
         </div>
         <p className="text-xs text-gray-400">
           Critical cybersecurity warnings, CISA KEV vulnerability alerts, smishing campaign advisories, and system notifications.

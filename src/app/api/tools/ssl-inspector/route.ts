@@ -2,11 +2,17 @@ import { NextRequest } from 'next/server';
 import tls from 'tls';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { validateUrlForSSRFAsync } from '@/lib/ssrfProtection';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-ssl-inspector', 30);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ host?: string; port?: number }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { host = '', port = 443 } = body;
+    const { host = '', port = 443 } = body || {};
 
     if (!host || typeof host !== 'string') {
       return createApiResponse({
@@ -26,21 +32,33 @@ export async function POST(req: NextRequest) {
     }
     cleanHost = cleanHost.split('/')[0].split(':')[0].trim();
 
-    // Check SSRF
+    // Check SSRF (including DNS resolution & IP pinning)
     const ssrfCheck = await validateUrlForSSRFAsync(`https://${cleanHost}`);
-    if (!ssrfCheck.allowed) {
+    if (!ssrfCheck.allowed || !ssrfCheck.resolvedIp) {
       return createApiResponse({
         error: { code: 'SSRF_RESTRICTED', message: ssrfCheck.reason || 'Restricted target domain.' },
         status: 400,
       });
     }
 
-    const portNum = Number(port) || 443;
+    const allowedPorts = [443, 8443, 465, 993, 995];
+    const requestedPort = port === undefined || port === null ? 443 : Number(port);
+    if (!Number.isInteger(requestedPort) || !allowedPorts.includes(requestedPort)) {
+      return createApiResponse({
+        error: {
+          code: 'RESTRICTED_PORT',
+          message: `Port ${String(port)} is not permitted. Allowed TLS ports: ${allowedPorts.join(', ')}.`,
+        },
+        status: 400,
+      });
+    }
+    const portNum = requestedPort;
+    const connectHost = ssrfCheck.resolvedIp;
 
     const certData = await new Promise<any>((resolve, reject) => {
       const socket = tls.connect(
         {
-          host: cleanHost,
+          host: connectHost,
           port: portNum,
           servername: cleanHost,
           rejectUnauthorized: false, // We inspect self-signed / expired certs too
@@ -127,7 +145,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'TLS_ERROR', message: `TLS Certificate inspection failed: ${err.message}` },
+      error: { code: 'TLS_ERROR', message: sanitizePublicError(err, 'TLS certificate inspection failed or timed out.') },
       status: 500,
     });
   }

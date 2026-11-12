@@ -51,8 +51,8 @@ export const Navbar: React.FC = () => {
     { name: 'EvidencePulse™ SHA-256', desc: 'RFC 8785 canonical manifest pipeline', href: '/evidencepulse', icon: Dna },
     { name: 'Security Posture Check', desc: 'Passive header & DNS diagnostic', href: '/tools/security-posture', icon: Shield },
     { name: 'Safe Vault (AES-GCM)', desc: 'Zero-knowledge encrypted client storage', href: '/safe-vault', icon: Lock },
-    { name: 'Security Test Lab', desc: '26 automated in-browser unit tests', href: '/test-lab', icon: Terminal },
-    { name: 'View All 18 Tools →', desc: 'Explore complete diagnostic suite', href: '/tools', icon: ArrowRight },
+    { name: 'Security Test Lab', desc: '7 automated in-browser unit tests', href: '/test-lab', icon: Terminal },
+    { name: 'View All 31 Tools →', desc: 'Explore complete diagnostic suite', href: '/tools', icon: ArrowRight },
   ];
 
   const legalItems = [
@@ -87,6 +87,9 @@ export const Navbar: React.FC = () => {
           {/* Tools Dropdown */}
           <div className="relative" ref={toolsRef}>
             <button
+              type="button"
+              aria-expanded={toolsOpen}
+              aria-haspopup="menu"
               onClick={() => {
                 setToolsOpen(!toolsOpen);
                 setLegalOpen(false);
@@ -190,6 +193,9 @@ export const Navbar: React.FC = () => {
           {/* Legal Dropdown */}
           <div className="relative" ref={legalRef}>
             <button
+              type="button"
+              aria-expanded={legalOpen}
+              aria-haspopup="menu"
               onClick={() => {
                 setLegalOpen(!legalOpen);
                 setToolsOpen(false);
@@ -285,7 +291,7 @@ export const Navbar: React.FC = () => {
             onClick={() => setMobileOpen(false)}
             className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-sky-500/10"
           >
-            All 18 Security Tools
+            All 31 Security Tools
           </Link>
           <Link
             href="/scam-check"

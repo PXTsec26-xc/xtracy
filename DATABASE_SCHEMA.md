@@ -1,18 +1,19 @@
-# XTRACY Database Schema Specification (Prisma ORM)
+# XTRACY Database Schema Specification (Target Relational Model & Runtime Storage)
 
-> **Initiative:** PXT sec26  
-> **Team Members:** Anshika Goswami, Harvi Patel, Dhruvi Solanki  
+> **Founder & Brand:** Elliot | PhantomXTrace (PXT) | Sole Founder  
+> **Founder Designation:** Elliot PXT sec26  
 
 ---
 
-## 1. Relational Entity Relationship & Model Specifications
+## 1. Relational Entity Relationship & Storage Architecture
 
-XTRACY uses **Prisma ORM** with **PostgreSQL** schema modeling and an in-memory development repository fallback.
+[prisma/schema.prisma](prisma/schema.prisma) defines the target 6-model **PostgreSQL / Prisma ORM** schema (`User`, `UserProfile`, `SavedScan`, `SavedBookmark`, `IncidentRecord`, `VaultNote`).  
+**Current Runtime Disclosure:** `prisma` and `@prisma/client` are not yet installed in `package.json`. When no external PostgreSQL database is wired, active server execution uses ephemeral in-memory stores (`src/lib/server/authProvider.ts` and `src/lib/server/memoryStores.ts`), while client Safe Vault ciphertexts persist locally in browser `localStorage`.
 
 ### A. User Model (`User`)
 - `id` (String, Primary Key, UUID)
 - `email` (String, Unique, Indexed)
-- `passwordHash` (String, SHA-256 + Salt PBKDF2 hash)
+- `passwordHash` (String, PBKDF2-HMAC-SHA256 at 210,000 iterations with 16-byte CSPRNG salt, verified via `timingSafeEqual`)
 - `fullName` (String)
 - `avatarUrl` (String, Optional)
 - `isEmailVerified` (Boolean, Default: false)

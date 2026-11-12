@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { analyzePhishLensMessage } from '@/lib/server/textAnalyzer';
+import { enforceRateLimit, parseBoundedJsonBody } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-phishlens', 40);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ content?: string }>(req, 65536);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { content = '' } = body;
+    const { content = '' } = body || {};
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return createApiResponse({
@@ -29,7 +35,7 @@ export async function POST(req: NextRequest) {
         analyzedAt: analysis.analyzedAt,
       },
       dataTrust: {
-        status: 'LIVE',
+        status: 'LOCAL',
         sourceName: 'XTRACY PhishLens Social Engineering Analyzer v2.1',
         lastRefreshed: new Date().toISOString(),
       },

@@ -1,12 +1,21 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
-import { checkRateLimit } from '@/lib/server/rateLimit';
 import { analyzeScamContent } from '@/lib/scamRules';
+import { enforceRateLimit, parseBoundedJsonBody } from '@/lib/server/securityUtils';
+import crypto from 'node:crypto';
 
 export interface CommunitySubmissionItem {
   id: string;
   submitterName: string;
-  category: 'Phishing URL' | 'Scam SMS' | 'Impersonation' | 'Deepfake' | 'Malware / Ransomware' | 'Other';
+  category:
+    | 'Phishing URL'
+    | 'Scam SMS'
+    | 'Impersonation'
+    | 'Deepfake'
+    | 'Malware / Ransomware'
+    | 'Vulnerability Report'
+    | 'Broken Safety Link'
+    | 'Other';
   sampleContent: string;
   targetPlatform: string;
   status: 'VERIFIED' | 'PENDING_REVIEW' | 'FLAGGED';
@@ -67,31 +76,26 @@ export async function GET(req: NextRequest) {
   return createApiResponse({
     data: filtered,
     dataTrust: {
-      status: 'LIVE',
-      sourceName: 'XTRACY Public Community Threat Directory',
+      status: 'DEMO',
+      sourceName: 'XTRACY Community Threat Directory (Sample Queue)',
       lastRefreshed: new Date().toISOString(),
     },
   });
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
-  const rate = checkRateLimit(ip);
+  const limited = enforceRateLimit(req, 'api-submissions', 20);
+  if (limited) return limited;
 
-  if (!rate.success) {
-    return createApiResponse({
-      error: { code: 'TOO_MANY_REQUESTS', message: 'Rate limit exceeded. Please wait before submitting another report.' },
-      status: 429,
-    });
-  }
+  const { data: body, error } = await parseBoundedJsonBody<Record<string, any>>(req, 16384);
+  if (error) return error;
 
   try {
-    const body = await req.json();
-    const { category, sampleContent, targetPlatform, submitterName } = body;
+    const { category, sampleContent, targetPlatform, submitterName } = body || {};
 
     if (!sampleContent || typeof sampleContent !== 'string' || sampleContent.trim().length < 5) {
       return createApiResponse({
-        error: { code: 'BAD_REQUEST', message: 'Threat sample content (min 5 characters) is required.' },
+        error: { code: 'BAD_REQUEST', message: 'Submission details (min 5 characters) are required.' },
         status: 400,
       });
     }
@@ -103,15 +107,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const allowedCategories: CommunitySubmissionItem['category'][] = [
+      'Phishing URL',
+      'Scam SMS',
+      'Impersonation',
+      'Deepfake',
+      'Malware / Ransomware',
+      'Vulnerability Report',
+      'Broken Safety Link',
+      'Other',
+    ];
+    const resolvedCategory = allowedCategories.includes(category) ? category : 'Other';
+
     // Run heuristic risk analysis
     const heuristic = analyzeScamContent(sampleContent, 'text');
 
     const newSubmission: CommunitySubmissionItem = {
-      id: 'sub-' + Date.now(),
-      submitterName: submitterName ? submitterName.trim().substring(0, 50) : 'Anonymous Member',
-      category: category || 'Other',
+      id: 'sub-' + crypto.randomBytes(6).toString('hex'),
+      submitterName: typeof submitterName === 'string' && submitterName.trim() ? submitterName.trim().substring(0, 50) : 'Anonymous Member',
+      category: resolvedCategory,
       sampleContent: sampleContent.trim(),
-      targetPlatform: targetPlatform ? targetPlatform.trim().substring(0, 50) : 'Web / Mobile',
+      targetPlatform: typeof targetPlatform === 'string' && targetPlatform.trim() ? targetPlatform.trim().substring(0, 50) : 'Web / Mobile',
       status: 'PENDING_REVIEW',
       riskScore: heuristic.riskScore,
       upvotesCount: 1,
@@ -120,12 +136,15 @@ export async function POST(req: NextRequest) {
     };
 
     communitySubmissionsStore.unshift(newSubmission);
+    if (communitySubmissionsStore.length > 200) {
+      communitySubmissionsStore.length = 200;
+    }
 
     return createApiResponse({
       data: newSubmission,
       dataTrust: {
-        status: 'LIVE',
-        sourceName: 'XTRACY Community Threat Verification Queue',
+        status: 'LOCAL',
+        sourceName: 'XTRACY In-Memory Submission Queue',
         lastRefreshed: new Date().toISOString(),
       },
     });

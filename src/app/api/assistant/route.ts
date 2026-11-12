@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { createIntegrityMetadata } from '@/lib/server/trustEngine';
+import { enforceRateLimit, parseBoundedJsonBody } from '@/lib/server/securityUtils';
 
 export type InvestigationLabel =
   | 'VERIFIED FACT'
@@ -11,9 +12,14 @@ export type InvestigationLabel =
   | 'FAILED';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'api-assistant', 30);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ prompt?: string; mode?: string; caseContext?: any }>(req, 32768);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { prompt = '', mode = 'TECHNICAL', caseContext = null } = body;
+    const { prompt = '', mode = 'TECHNICAL' } = body || {};
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
       return createApiResponse({
@@ -89,20 +95,22 @@ export async function POST(req: NextRequest) {
       evidenceTrail = ['XTRACY Defensive Copilot Reasoning Model'];
     }
 
-    const aiNotice = 'AI guidance. Verify critical actions independently before deploying to production.';
-    const incidentModeNotice = mode === 'INCIDENT_ASSISTANCE' ? 'AI-GENERATED SUMMARY — REQUIRES HUMAN REVIEW' : undefined;
+    const aiNotice =
+      'Deterministic rule-based copilot guidance (not an external LLM). Verify critical security actions independently.';
+    const incidentModeNotice =
+      mode === 'INCIDENT_ASSISTANCE' ? 'AUTOMATED GUIDANCE — REQUIRES HUMAN VERIFICATION' : undefined;
 
     const metadata = createIntegrityMetadata(
-      'AI EXPLANATION',
-      'XTRACY Investigation Copilot Engine v2.1',
-      'Deterministic Evidence-Aware Reasoning Architecture',
+      'LOCAL ANALYSIS',
+      'XTRACY Deterministic Copilot Engine v2.1',
+      'Rule-Based Defensive Security Guidance Engine',
       85,
       aiNotice
     );
 
     return createApiResponse({
       data: {
-        query: prompt,
+        query: prompt.slice(0, 500),
         mode,
         label,
         directSolution,
@@ -116,8 +124,8 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString(),
       },
       dataTrust: {
-        status: 'LIVE',
-        sourceName: 'XTRACY Copilot Service Layer',
+        status: 'LOCAL',
+        sourceName: 'XTRACY Deterministic Copilot Engine',
         lastRefreshed: new Date().toISOString(),
       },
     });

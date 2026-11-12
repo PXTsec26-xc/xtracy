@@ -5,6 +5,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { DataTrustBadge } from '@/components/ui/DataTrustBadge';
 import { CommunitySubmissionItem } from '@/app/api/submissions/route';
+import { DataTrustStatus } from '@/types';
 import { Users, ShieldAlert, ThumbsUp, Calendar, Filter, Plus } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,12 +13,20 @@ export default function CommunityFeedPage() {
   const [items, setItems] = useState<CommunitySubmissionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [trustStatus, setTrustStatus] = useState<DataTrustStatus>('DEMO');
+  const [trustSource, setTrustSource] = useState('Community Intake Queue (Runtime Memory)');
 
   useEffect(() => {
     fetch('/api/submissions')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setItems(data.data);
+        if (data.success) {
+          setItems(data.data);
+          if (data.dataTrust) {
+            setTrustStatus(data.dataTrust.status || 'DEMO');
+            setTrustSource(data.dataTrust.sourceName || 'Community Intake Queue');
+          }
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -31,15 +40,16 @@ export default function CommunityFeedPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800 pb-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-3xl font-black text-white flex items-center gap-2">
               <Users className="w-8 h-8 text-brand-cyan" />
-              Community Threat Intelligence Feed
+              Community Threat Intake Feed
             </h1>
-            <Badge type="productStatus" value="PUBLIC VERIFIED" size="sm" />
+            <Badge type="productStatus" value="COMMUNITY QUEUE" size="sm" />
+            <DataTrustBadge status={trustStatus} sourceName={trustSource} />
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            Browse live crowdsourced scam alerts, phishing URLs, smishing messages, and impersonation reports submitted by users.
+            Browse sample and runtime user-submitted scam reports, phishing URLs, smishing lures, and impersonation disclosures.
           </p>
         </div>
 

@@ -1,79 +1,103 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizeReportText } from '@/lib/server/securityUtils';
+
+interface VerificationEvidenceInput {
+  id?: string;
+  verificationStatus?: string;
+  originalFileHash?: string;
+  currentFileHash?: string;
+  previousRecordHash?: string;
+}
 
 export async function POST(req: NextRequest) {
+  const rateErr = enforceRateLimit(req, 'reports-verification', 30);
+  if (rateErr) return rateErr;
+
   try {
-    const body = await req.json();
-    const {
-      caseId = 'XTR-CASE-2026-0041',
-      title = 'Evidence Verification Assessment',
-      evidenceItems = [],
-    } = body;
+    const { data: body, error: parseErr } = await parseBoundedJsonBody<{
+      caseId?: string;
+      title?: string;
+      evidenceItems?: VerificationEvidenceInput[];
+    }>(req, 65536);
+    if (parseErr) return parseErr;
+
+    const safeCaseId = sanitizeReportText(body?.caseId || 'UNASSIGNED-CASE', 80);
+    const safeTitle = sanitizeReportText(body?.title || 'Evidence Verification Assessment', 120);
+    const evidenceItems = Array.isArray(body?.evidenceItems) ? body!.evidenceItems.slice(0, 100) : [];
 
     const verificationDate = new Date().toUTCString();
-    const totalCount = evidenceItems.length || 1;
-    const mismatches = evidenceItems.filter((i: any) => i.verificationStatus === 'MISMATCH').length;
-    const verifiedCount = totalCount - mismatches;
-    const chainIntact = mismatches === 0;
+    const totalCount = evidenceItems.length;
+
+    let mismatches = 0;
+    let unverified = 0;
+    let verifiedCount = 0;
+
+    const evaluatedRows = evidenceItems.map((item, idx) => {
+      const origHash = typeof item.originalFileHash === 'string' ? item.originalFileHash.trim().toLowerCase() : '';
+      const currHash = typeof item.currentFileHash === 'string' ? item.currentFileHash.trim().toLowerCase() : '';
+      const validSha = /^[0-9a-f]{64}$/.test(origHash) && /^[0-9a-f]{64}$/.test(currHash);
+
+      let computedStatus = 'UNVERIFIED';
+      if (item.verificationStatus === 'MISMATCH' || (validSha && origHash !== currHash)) {
+        computedStatus = 'MISMATCH';
+        mismatches++;
+      } else if (validSha && origHash === currHash) {
+        computedStatus = 'VERIFIED_MATCH';
+        verifiedCount++;
+      } else {
+        unverified++;
+      }
+
+      return `[${idx + 1}] ID: ${sanitizeReportText(item.id || `ITEM-${idx + 1}`, 60)} | Result: ${computedStatus}
+Original SHA-256: ${sanitizeReportText(origHash || 'N/A', 70)}
+Current SHA-256:  ${sanitizeReportText(currHash || 'N/A', 70)}
+Record Chain Link: ${sanitizeReportText(item.previousRecordHash || 'N/A', 70)}
+---`;
+    });
+
+    const chainIntact = totalCount > 0 && mismatches === 0 && unverified === 0;
 
     const reportMarkdown = `# XTRACY CRYPTOGRAPHIC EVIDENCE VERIFICATION REPORT
-Case ID: ${caseId}
-Title: ${title}
+Case ID: ${safeCaseId}
+Title: ${safeTitle}
 Verification Date: ${verificationDate}
 
 ## 1. Technical Verification Summary
-- Evidence Items Checked: ${totalCount}
-- Verified Fingerprints: ${verifiedCount}
+- Evidence Items Submitted: ${totalCount}
+- Verified SHA-256 Matches: ${verifiedCount}
 - Integrity Mismatches: ${mismatches}
-- Hash Chain Status: ${chainIntact ? 'INTACT (VERIFIED CONTINUITY)' : 'REVIEW REQUIRED (MISMATCH DETECTED)'}
+- Unverified / Incomplete Hash Items: ${unverified}
+- Verification Status: ${totalCount === 0 ? 'NO_ITEMS_SUBMITTED' : chainIntact ? 'SHA256_MATCH_CONFIRMED' : mismatches > 0 ? 'MISMATCH_DETECTED' : 'INCOMPLETE_HASH_DATA'}
 
 ## 2. Cryptographic Integrity Details
-${
-  evidenceItems.length > 0
-    ? evidenceItems
-        .map(
-          (item: any, idx: number) =>
-            `[${idx + 1}] ID: ${item.id} | Status: ${item.verificationStatus || 'VERIFIED'}
-Original SHA-256: ${item.originalFileHash || 'N/A'}
-Current SHA-256:  ${item.currentFileHash || 'N/A'}
-Record Chain Link: ${item.previousRecordHash || 'N/A'}
----`
-        )
-        .join('\n')
-    : 'No evidence records submitted for verification.'
-}
-
-## 3. Verification Conclusion
-${
-  mismatches === 0
-    ? 'All evaluated evidence items matched their recorded SHA-256 cryptographic fingerprints at the time of this verification.'
-    : `${mismatches} evidence record(s) did not match their original cryptographic fingerprint. Review anomaly details.`
-}
+${evaluatedRows.length > 0 ? evaluatedRows.join('\n') : 'No evidence records were submitted for verification.'}
 
 ---
 TECHNICAL & LEGAL DISCLAIMER:
-This report documents technical cryptographic verification results (SHA-256 fingerprints and hash-chain continuity). XTRACY is not a law-enforcement agency and does not guarantee legal admissibility in court. Authorized investigators remain responsible for forensic acquisition and chain-of-custody procedures.`;
+This report compares user-supplied SHA-256 checksums and continuity metadata. XTRACY is not a law-enforcement agency and cannot attest chain-of-custody or legal admissibility in court without authorized forensic acquisition records.`;
 
     return createApiResponse({
       data: {
-        caseId,
-        title,
-        verificationDate,
+        caseId: safeCaseId,
+        title: safeTitle,
         totalCount,
         verifiedCount,
         mismatches,
+        unverified,
         chainIntact,
         reportMarkdown,
+        verificationDate,
       },
       dataTrust: {
-        status: 'LIVE',
-        sourceName: 'XTRACY Verification Report Exporter',
+        status: 'LOCAL',
+        sourceName: 'XTRACY Hash Verification Formatter',
         lastRefreshed: new Date().toISOString(),
       },
     });
-  } catch (err) {
+  } catch {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: 'Failed to generate cryptographic verification report.' },
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to generate verification report.' },
       status: 500,
     });
   }

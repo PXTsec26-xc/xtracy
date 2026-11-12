@@ -1,4 +1,4 @@
-export type StorageStatus = 'PERSISTENT' | 'LOCAL' | 'TEMPORARY' | 'UNAVAILABLE';
+export type StorageStatus = 'PERSISTENT' | 'LOCAL' | 'TEMPORARY' | 'SESSION_ONLY' | 'UNAVAILABLE';
 
 export interface DbUser {
   id: string;

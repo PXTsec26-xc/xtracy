@@ -22,8 +22,8 @@ export interface SecurityTwinState {
   };
   configuration: {
     httpsEnabled: boolean;
-    cspHeaderPresent: boolean;
-    hstsHeaderPresent: boolean;
+    cspHeaderPresent: boolean | null;
+    hstsHeaderPresent: boolean | null;
   };
   evidenceCount: number;
   openFindingsCount: number;
@@ -54,22 +54,22 @@ export function generateSecurityTwin(
       serverLocation: 'External Public Network',
     },
     exposure: {
-      openPorts: isHttps ? [443] : [80],
-      publicKeywords: ['web-server', 'http-endpoint'],
+      openPorts: [],
+      publicKeywords: [],
       riskScore,
     },
     configuration: {
       httpsEnabled: isHttps,
-      cspHeaderPresent: false,
-      hstsHeaderPresent: isHttps,
+      cspHeaderPresent: null,
+      hstsHeaderPresent: null,
     },
     evidenceCount: factorsCount,
     openFindingsCount: factorsCount,
     riskMovement: riskScore > 40 ? 'INCREASED' : 'STABLE',
     unknownAreas: [
-      'Backend Application Logic',
-      'Private Server Configuration',
-      'Database Security State',
+      'Open Network Ports (No active port scan performed)',
+      'HTTP Security Headers (Requires live Header Analyzer check)',
+      'Backend Application & Database State',
     ],
     lastAssessedAt: timestamp,
   };

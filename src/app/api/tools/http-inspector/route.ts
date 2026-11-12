@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { safeHttpFetch } from '@/lib/ssrfProtection';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError, XTRACY_USER_AGENT_BASE } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-http-inspector', 30);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ url?: string; method?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { url = '', method = 'GET' } = body;
+    const { url = '', method = 'GET' } = body || {};
 
     if (!url || typeof url !== 'string') {
       return createApiResponse({
@@ -15,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const validMethods = ['GET', 'HEAD', 'OPTIONS'];
-    const chosenMethod = validMethods.includes(method.toUpperCase()) ? method.toUpperCase() : 'GET';
+    const chosenMethod = typeof method === 'string' && validMethods.includes(method.toUpperCase()) ? method.toUpperCase() : 'GET';
     const startTime = Date.now();
 
     let response: Response;
@@ -25,19 +31,20 @@ export async function POST(req: NextRequest) {
       const fetchResult = await safeHttpFetch(url, {
         method: chosenMethod,
         headers: {
-          'User-Agent': 'XTRACY-HTTP-Inspector/1.0 (+https://xtracy.org)',
+          'User-Agent': `XTRACY-HTTP-Inspector/1.0 (+${XTRACY_USER_AGENT_BASE})`,
           Accept: '*/*',
         },
       });
       response = fetchResult.response;
       finalTargetUrl = fetchResult.finalUrl;
     } catch (err: any) {
+      const msg = sanitizePublicError(err, 'HTTP inspection failed: unable to connect to target.');
       return createApiResponse({
         error: {
           code: 'HTTP_FETCH_ERROR',
-          message: err.message.includes('SSRF') ? err.message : `HTTP inspection failed: ${err.message}`,
+          message: msg,
         },
-        status: err.message.includes('SSRF') ? 400 : 502,
+        status: msg.startsWith('SSRF Blocked:') ? 400 : 502,
       });
     }
 
@@ -104,7 +111,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'HTTP_FETCH_ERROR', message: `HTTP inspection failed: ${err.message}` },
+      error: { code: 'HTTP_FETCH_ERROR', message: sanitizePublicError(err, 'HTTP inspection failed.') },
       status: 502,
     });
   }

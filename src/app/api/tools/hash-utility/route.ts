@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-hash-utility', 60);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ text?: string; secret?: string; compareHash?: string }>(req, 131072);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { text = '', secret = '', compareHash = '' } = body;
+    const { text = '', secret = '', compareHash = '' } = body || {};
 
     if (typeof text !== 'string') {
       return createApiResponse({
@@ -76,7 +82,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `Hashing failed: ${err.message || 'Processing error'}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'Hashing operation failed.') },
       status: 500,
     });
   }

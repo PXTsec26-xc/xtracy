@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { safeHttpFetch } from '@/lib/ssrfProtection';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError, XTRACY_USER_AGENT_BASE } from '@/lib/server/securityUtils';
 
 interface HeaderEvaluation {
   name: string;
@@ -13,9 +14,14 @@ interface HeaderEvaluation {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-header-analyzer', 30);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ url?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { url = '' } = body;
+    const { url = '' } = body || {};
 
     if (!url || typeof url !== 'string') {
       return createApiResponse({
@@ -32,21 +38,20 @@ export async function POST(req: NextRequest) {
       const fetchResult = await safeHttpFetch(url, {
         method: 'GET',
         headers: {
-          'User-Agent': 'XTRACY-Security-Audit-Engine/1.0 (+https://xtracy.org)',
+          'User-Agent': `XTRACY-Security-Audit-Engine/1.0 (+${XTRACY_USER_AGENT_BASE})`,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
       });
       response = fetchResult.response;
       finalTargetUrl = fetchResult.finalUrl;
     } catch (err: any) {
+      const msg = sanitizePublicError(err, 'Unable to connect to target URL.');
       return createApiResponse({
         error: {
           code: 'FETCH_ERROR',
-          message: err.message.includes('SSRF')
-            ? err.message
-            : `Unable to connect to target URL: ${err.message || 'Connection timeout or refused.'}`,
+          message: msg,
         },
-        status: err.message.includes('SSRF') ? 400 : 502,
+        status: msg.startsWith('SSRF Blocked:') ? 400 : 502,
       });
     }
 
@@ -275,7 +280,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `Header audit failed: ${err.message || 'Unknown processing error'}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'Header audit failed due to a processing error.') },
       status: 500,
     });
   }

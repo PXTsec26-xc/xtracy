@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import dns from 'dns';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-email-security', 40);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ domain?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { domain = '' } = body;
+    const { domain = '' } = body || {};
 
     if (!domain || typeof domain !== 'string') {
       return createApiResponse({
@@ -130,7 +136,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `Email security analysis failed: ${err.message}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'Email security analysis failed.') },
       status: 500,
     });
   }

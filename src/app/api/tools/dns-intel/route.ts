@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server';
 import dns from 'dns';
 import { createApiResponse } from '@/lib/server/apiResponse';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError } from '@/lib/server/securityUtils';
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-dns-intel', 40);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ domain?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { domain = '' } = body;
+    const { domain = '' } = body || {};
 
     if (!domain || typeof domain !== 'string') {
       return createApiResponse({
@@ -67,7 +73,7 @@ export async function POST(req: NextRequest) {
         if (err.code === 'ENODATA' || err.code === 'ENOTFOUND') {
           errors[key] = `No ${key.toUpperCase()} records found for this domain.`;
         } else {
-          errors[key] = err.message || 'Lookup timeout / failure';
+          errors[key] = 'DNS lookup timed out or returned an external error.';
         }
         return null;
       }
@@ -151,7 +157,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `DNS query failed: ${err.message || 'Unknown network error'}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'DNS query failed due to a resolution error.') },
       status: 500,
     });
   }

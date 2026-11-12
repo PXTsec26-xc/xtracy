@@ -25,6 +25,16 @@ import { calculateIntegrityIndex, evaluateCaseReadiness } from '../src/lib/integ
 import { hashPassword, verifyPassword, generateToken } from '../src/lib/server/passwordCrypto.ts';
 import { validateUrlForSSRF, isPrivateIp } from '../src/lib/ssrfProtection.ts';
 import { processDefensiveAIQuery } from '../src/lib/server/aiProvider.ts';
+import {
+  registerUser,
+  authenticateUser,
+  getUserBySessionToken,
+  revokeSessionToken,
+  updateUserPassword,
+  deleteUserAccountRecords,
+} from '../src/lib/server/authProvider.ts';
+import { COUNTRY_PROFILES, GLOBAL_SAFETY_RESOURCES } from '../src/lib/globalSafetyData.ts';
+import { KNOWLEDGE_BASE_RESOURCES } from '../src/data/knowledgeBase.ts';
 
 console.log('═══════════════════════════════════════════════════════════════════════');
 console.log('🧪 XTRACY 2.1 COMPREHENSIVE TECHNICAL CRYPTOGRAPHY & SECURITY TEST SUITE');
@@ -151,7 +161,7 @@ await test('WebCrypto AES-GCM: tampered ciphertext fails integrity authenticatio
 // ─────────────────────────────────────────────────────────────────────────────
 console.log('\n─── 3. Server-Side PBKDF2 Password Storage Tests ───');
 
-await test('Server PBKDF2: hashPassword creates salt:hash with 100,000 SHA-256 iterations', async () => {
+await test('Server PBKDF2: hashPassword creates salt:hash with 210,000 SHA-256 iterations', async () => {
   const pwd = 'UserSecurePassword2026!';
   const combined = hashPassword(pwd);
   const parts = combined.split(':');
@@ -610,6 +620,14 @@ await test('SSRF Protection: permits valid public HTTPS targets', async () => {
   assert.strictEqual(validateUrlForSSRF('https://example.com:8443').allowed, true);
 });
 
+await test('SSRF Protection: blocks hex IPv6-mapped loopback/metadata and private IPv6 ranges', async () => {
+  assert.strictEqual(isPrivateIp('::ffff:7f00:1'), true);
+  assert.strictEqual(isPrivateIp('::ffff:a9fe:a9fe'), true);
+  assert.strictEqual(isPrivateIp('fc00::1'), true);
+  assert.strictEqual(isPrivateIp('fe80::1'), true);
+  assert.strictEqual(isPrivateIp('1.1.1.1'), false);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 11: AI DEFENSIVE SAFETY GUARDRAILS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -626,6 +644,54 @@ await test('AI Guardrails: processes legitimate defensive hardening queries', as
   const res = await processDefensiveAIQuery(defensiveQuery);
   assert(!res.answer.includes('SAFETY REFUSAL'), 'Must accept defensive inquiry');
   assert(res.answer.includes('[OBSERVED DATA]') || res.answer.includes('Defensive'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 12: AUTHENTICATION, TOKEN REVOCATION & DATA INTEGRITY
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n─── 12. Auth Token Revocation, Password Change & Dataset Validation ───');
+
+await test('Auth Lifecycle: signup, verify token, password rotation, and token revocation', async () => {
+  const email = `sec-test-${crypto.randomUUID().slice(0, 8)}@example.org`;
+  const signupRes = await registerUser({
+    email,
+    password: 'StrongTestPassword2026!',
+    fullName: 'Test Account',
+  });
+  assert(signupRes.token && signupRes.user, 'Signup must issue user and signed session token');
+
+  const resolvedUser = await getUserBySessionToken(signupRes.token);
+  assert.strictEqual(resolvedUser?.email, email);
+
+  const rotateRes = updateUserPassword(signupRes.user.id, 'StrongTestPassword2026!', 'RotatedPass2026!');
+  assert.strictEqual(rotateRes.success, true);
+
+  const loginRes = await authenticateUser({ email, password: 'RotatedPass2026!' });
+  assert(loginRes.token, 'Authentication with rotated password must succeed');
+
+  const badLogin = await authenticateUser({ email, password: 'WrongPassword!' });
+  assert.strictEqual(badLogin.token, undefined);
+
+  revokeSessionToken(signupRes.token);
+  const afterRevoke = await getUserBySessionToken(signupRes.token);
+  assert.strictEqual(afterRevoke, null, 'Revoked token must be rejected immediately');
+
+  deleteUserAccountRecords(signupRes.user.id);
+});
+
+await test('Global Safety Dataset: >= 50 countries and valid HTTPS resource URLs', async () => {
+  assert(COUNTRY_PROFILES.length >= 50, `Expected >= 50 country profiles, got ${COUNTRY_PROFILES.length}`);
+  assert(GLOBAL_SAFETY_RESOURCES.length >= 50, 'Expected substantial verified safety resources');
+  for (const res of GLOBAL_SAFETY_RESOURCES) {
+    assert(res.officialUrl.startsWith('https://'), `Non-HTTPS safety URL: ${res.id}`);
+  }
+});
+
+await test('Knowledge Base Dataset: >= 100 cybersecurity modules with valid references', async () => {
+  assert(KNOWLEDGE_BASE_RESOURCES.length >= 100, `Expected >= 100 modules, got ${KNOWLEDGE_BASE_RESOURCES.length}`);
+  for (const mod of KNOWLEDGE_BASE_RESOURCES) {
+    assert(mod.officialUrl.startsWith('https://'), `Non-HTTPS KB reference: ${mod.id}`);
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

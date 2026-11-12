@@ -48,15 +48,15 @@ export default function CommandCenterDashboardPage() {
         </GlassCard>
 
         <GlassCard className="p-4 border-gray-800 flex flex-col gap-2">
-          <span className="text-gray-400 text-[10px]">Evidence Integrity Status</span>
-          <strong className="text-2xl font-black text-emerald-400">INTACT</strong>
-          <span className="text-[10px] text-gray-400">SHA-256 Hash Chain Verified</span>
+          <span className="text-gray-400 text-[10px]">Evidence Hashing Tools</span>
+          <strong className="text-2xl font-black text-emerald-400">READY</strong>
+          <span className="text-[10px] text-gray-400">Client SHA-256 &amp; RFC 8785 Engines</span>
         </GlassCard>
 
         <GlassCard className="p-4 border-gray-800 flex flex-col gap-2">
-          <span className="text-gray-400 text-[10px]">Privacy Mode</span>
-          <strong className="text-2xl font-black text-cyan-300">100% LOCAL</strong>
-          <span className="text-[10px] text-gray-400">Zero Server Data Storage</span>
+          <span className="text-gray-400 text-[10px]">Storage Posture</span>
+          <strong className="text-2xl font-black text-cyan-300">CLIENT + EPHEMERAL</strong>
+          <span className="text-[10px] text-gray-400">Local Browser Vault &amp; Runtime Memory</span>
         </GlassCard>
 
         <GlassCard className="p-4 border-gray-800 flex flex-col gap-2">

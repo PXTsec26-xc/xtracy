@@ -1,9 +1,14 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
-import { getUserBySessionToken } from '@/lib/server/authProvider';
+import { deleteUserAccountRecords, getUserBySessionToken } from '@/lib/server/authProvider';
+import { purgeAllUserMemoryStores } from '@/lib/server/memoryStores';
+import { enforceRateLimit, extractBearerToken } from '@/lib/server/securityUtils';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const rateErr = enforceRateLimit(req, 'user-privacy-get');
+  if (rateErr) return rateErr;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -23,21 +28,37 @@ export async function GET(req: NextRequest) {
         createdAt: user.createdAt,
       },
       dataStorageBreakdown: {
-        serverStoredItems: ['Account credentials hash', 'Security Archetype Profile', 'Saved Scans', 'Bookmarked CVEs', 'Safe Vault Ciphertext (Client-Encrypted AES-GCM)'],
-        localDeviceOnlyItems: ['Master Vault Encryption Passphrase (NEVER sent to server)', 'Active Session Cookies', 'Local UI Theme Mode'],
-        notCollectedItems: ['Exact Physical GPS Location', 'Phone Contacts', 'Camera/Microphone Stream', 'Browsing History'],
+        serverStoredItems: [
+          'Runtime session record & salted PBKDF2 password hash (ephemeral memory store when no external DB is connected)',
+          'Saved Scans & Bookmarks (runtime memory)',
+          'Client-Encrypted Safe Vault Ciphertext (AES-256-GCM)',
+        ],
+        localDeviceOnlyItems: [
+          'Master Vault Encryption Passphrase (NEVER transmitted to server)',
+          'AES-GCM Random Salt & Client Vault Ciphertext',
+          'Local UI Theme & Accessibility Preferences',
+        ],
+        notCollectedItems: [
+          'Exact Physical GPS Location',
+          'Phone Contacts',
+          'Camera/Microphone Stream',
+          'Third-Party Tracking Telemetry',
+        ],
       },
       privacyGuarantees: [
-        'Safe Vault notes are encrypted client-side using WebCrypto AES-GCM 256-bit before reaching XTRACY servers.',
-        'No telemetry or tracking scripts are loaded.',
-        'Users retain 100% right to inspect and purge all saved data instantly.',
+        'Safe Vault encryption and decryption run strictly inside your browser via WebCrypto AES-256-GCM.',
+        'No third-party advertising trackers or behavioral analytics scripts are loaded.',
+        'Users can inspect and purge all server-side runtime records and local browser storage at any time.',
       ],
     },
   });
 }
 
 export async function DELETE(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const rateErr = enforceRateLimit(req, 'user-privacy-delete', 20);
+  if (rateErr) return rateErr;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -47,9 +68,13 @@ export async function DELETE(req: NextRequest) {
     });
   }
 
+  const removedCounts = purgeAllUserMemoryStores(user.id);
+  deleteUserAccountRecords(user.id);
+
   return createApiResponse({
     data: {
-      message: `Data erasure request processed for user '${user.email}'. All saved scans, bookmarks, incident logs, and encrypted vault notes have been permanently purged.`,
+      message: `All runtime server records and active sessions associated with user ID '${user.id}' have been purged.`,
+      removedCounts,
       purgedAt: new Date().toISOString(),
     },
   });

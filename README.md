@@ -3,14 +3,14 @@
 [![Production Status](https://img.shields.io/badge/Production-Live-0284c7?style=for-the-badge&logo=vercel)](https://xtracy.vercel.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-000000?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
-[![Tests](https://img.shields.io/badge/Tests-26%20Passed-10b981?style=for-the-badge)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/Verification-Cryptographic%20%26%20Route%20Suites-10b981?style=for-the-badge)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Permissive%20Deps-blue?style=for-the-badge)](NOTICE.md)
 
 > **Live Deployment:** [https://xtracy.vercel.app](https://xtracy.vercel.app)
-> **Founder & Creator:** Elliot PXT (PhantomXTrace Founder) ([@PXTsec26-xc](https://github.com/PXTsec26-xc))
-> **Organization / Initiative:** PhantomXTrace (PXT)
+> **Founder & Owner:** Elliot | PhantomXTrace (PXT) | Sole Founder (`Elliot PXT sec26`, [@PXTsec26-xc](https://github.com/PXTsec26-xc))
+> **Brand Identity:** PhantomXTrace (PXT)
 > **Git Repository:** `https://github.com/PXTsec26-xc/xtracy.git`
-> **Official Attribution:** Founded by Elliot PXT. Developed under the PhantomXTrace (PXT) identity.
+> **Official Attribution:** Founded by Elliot | PhantomXTrace (PXT) | Sole Founder.
 
 ---
 
@@ -109,8 +109,9 @@ npm install
 # 3. Configure environment variables (optional for local mode)
 cp .env.example .env.local
 
-# 4. Run automated test suite (26 passing security tests)
+# 4. Run automated security and verification test suites
 npm run test
+npm run verify
 
 # 5. Run development server
 npm run dev

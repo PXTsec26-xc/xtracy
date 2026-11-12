@@ -2,11 +2,15 @@ import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
 import { DbIncidentRecord } from '@/lib/server/models';
-
-const userIncidentsStore = new Map<string, DbIncidentRecord[]>();
+import { userIncidentsStore } from '@/lib/server/memoryStores';
+import { enforceRateLimit, extractBearerToken, parseBoundedJsonBody } from '@/lib/server/securityUtils';
+import crypto from 'node:crypto';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-incidents-get', 60);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -21,7 +25,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'user-incidents-post', 40);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -31,31 +38,36 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  try {
-    const body = await req.json();
-    const { scenarioId, title, checklistState, notes, status } = body;
+  const { data: body, error } = await parseBoundedJsonBody<Record<string, any>>(req, 32768);
+  if (error) return error;
 
-    const newItem: DbIncidentRecord = {
-      id: 'inc-' + Date.now(),
-      userId: user.id,
-      scenarioId,
-      title,
-      status: status || 'IN_PROGRESS',
-      checklistState: checklistState || {},
-      notes: notes || '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      storageStatus: 'PERSISTENT',
-    };
+  const { scenarioId, title, checklistState, notes, status } = body || {};
 
-    const existing = userIncidentsStore.get(user.id) || [];
-    userIncidentsStore.set(user.id, [newItem, ...existing.filter((i) => i.scenarioId !== scenarioId)]);
-
-    return createApiResponse({ data: newItem });
-  } catch (err) {
+  if (!scenarioId || typeof scenarioId !== 'string' || !title || typeof title !== 'string') {
     return createApiResponse({
-      error: { code: 'BAD_REQUEST', message: 'Invalid payload.' },
+      error: { code: 'BAD_REQUEST', message: 'scenarioId and title are required.' },
       status: 400,
     });
   }
+
+  const validStatuses = ['IN_PROGRESS', 'RESOLVED', 'RECOVERING'] as const;
+  const resolvedStatus = validStatuses.includes(status) ? (status as DbIncidentRecord['status']) : 'IN_PROGRESS';
+
+  const newItem: DbIncidentRecord = {
+    id: 'inc-' + crypto.randomBytes(6).toString('hex'),
+    userId: user.id,
+    scenarioId: scenarioId.slice(0, 80),
+    title: title.slice(0, 160),
+    status: resolvedStatus,
+    checklistState: checklistState && typeof checklistState === 'object' ? checklistState : {},
+    notes: typeof notes === 'string' ? notes.slice(0, 10000) : '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    storageStatus: 'SESSION_ONLY',
+  };
+
+  const existing = userIncidentsStore.get(user.id) || [];
+  userIncidentsStore.set(user.id, [newItem, ...existing.filter((i) => i.scenarioId !== newItem.scenarioId)]);
+
+  return createApiResponse({ data: newItem });
 }

@@ -49,7 +49,7 @@ export const FounderSection: React.FC = () => {
     {
       period: 'October 2026',
       title: 'Strict Quality Suite & Master Technical Dossier',
-      desc: 'Created 26 passing cryptographic unit tests, STRIDE threat model, and ~400-page equivalent technical dossier.',
+      desc: 'Built automated cryptographic, SSRF, and integrity verification suites, STRIDE threat model, and core technical architecture documentation.',
     },
     {
       period: 'November 2026',
@@ -232,7 +232,7 @@ export const FounderSection: React.FC = () => {
             <strong>Elliot PXT sec26</strong> is the founder of <strong>PhantomXTrace (PXT)</strong> and an independent cybersecurity architect, software engineer, and researcher. Specializing in defensive application security, zero-knowledge cryptographic models, and server-side request boundary defenses, Elliot architected the entire XTRACY platform from inception.
           </p>
           <p>
-            Operating through the <strong>PhantomXTrace (PXT)</strong> research collective, his engineering work emphasizes deterministic intelligence—replacing speculative threat verdicts with observable signals, such as canonical RFC 8785 JSON manifest hash chains, DNS record inspection, and browser-native WebCrypto AES-GCM encryption.
+            Operating under the <strong>PhantomXTrace (PXT)</strong> sole-founder brand identity, his engineering work emphasizes deterministic intelligence—replacing speculative threat verdicts with observable signals, such as canonical RFC 8785 JSON manifest hash chains, DNS record inspection, and browser-native WebCrypto AES-GCM encryption.
           </p>
         </div>
       </GlassCard>

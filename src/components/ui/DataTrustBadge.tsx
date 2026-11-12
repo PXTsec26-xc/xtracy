@@ -36,6 +36,10 @@ export const DataTrustBadge: React.FC<DataTrustBadgeProps> = ({
     colorStyle = 'bg-sky-950/80 text-sky-400 border-sky-800/80';
     dotColor = 'bg-sky-400';
     Icon = Info;
+  } else if (currentStatus === 'LOCAL') {
+    colorStyle = 'bg-teal-950/80 text-teal-400 border-teal-800/80';
+    dotColor = 'bg-teal-400';
+    Icon = ShieldCheck;
   }
 
   return (

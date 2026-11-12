@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { validateUrlForSSRFAsync } from '@/lib/ssrfProtection';
 import { env } from '@/lib/server/env';
+import { enforceRateLimit, parseBoundedJsonBody, sanitizePublicError } from '@/lib/server/securityUtils';
 
 interface ScoringFactor {
   name: string;
@@ -28,9 +29,14 @@ function calculateEntropy(str: string): number {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'tools-url-guard', 40);
+  if (limited) return limited;
+
+  const { data: body, error } = await parseBoundedJsonBody<{ url?: string }>(req, 16384);
+  if (error) return error;
+
   try {
-    const body = await req.json();
-    const { url = '' } = body;
+    const { url = '' } = body || {};
 
     if (!url || typeof url !== 'string') {
       return createApiResponse({
@@ -286,7 +292,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return createApiResponse({
-      error: { code: 'INTERNAL_ERROR', message: `Failed to inspect URL: ${err.message || 'Unknown processing error'}` },
+      error: { code: 'INTERNAL_ERROR', message: sanitizePublicError(err, 'Failed to inspect URL.') },
       status: 500,
     });
   }

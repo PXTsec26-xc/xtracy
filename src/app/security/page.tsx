@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
-import { Bug, Mail, CheckCircle2, AlertTriangle, Send, ShieldCheck, FileText } from 'lucide-react';
-import Link from 'next/link';
+import { Bug, CheckCircle2, AlertTriangle, Send, FileText } from 'lucide-react';
 
 export default function SecurityDisclosurePage() {
   const [reporterEmail, setReporterEmail] = useState('');
@@ -12,34 +11,56 @@ export default function SecurityDisclosurePage() {
   const [vulnerabilitySummary, setVulnerabilitySummary] = useState('');
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitReport = (e: React.FormEvent) => {
+  const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reporterEmail || !vulnerabilitySummary || !stepsToReproduce) return;
+    setSubmitError(null);
+    if (!reporterEmail.trim() || !vulnerabilitySummary.trim() || !stepsToReproduce.trim()) return;
 
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submitterName: reporterEmail.trim(),
+          category: 'Vulnerability Report',
+          targetPlatform: targetComponent,
+          sampleContent: `Summary: ${vulnerabilitySummary.trim()}\n\nSteps to Reproduce:\n${stepsToReproduce.trim()}`,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error?.message || 'Submission rejected by server.');
+      }
+      setSubmissionId(json?.data?.id || null);
       setSubmitted(true);
-    }, 800);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Unable to submit disclosure report.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="flex flex-col gap-8 animate-fadeIn max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-black text-white flex items-center gap-2">
               <Bug className="w-8 h-8 text-brand-cyan" />
-              Responsible Security & Vulnerability Disclosure
+              Responsible Security &amp; Vulnerability Disclosure
             </h1>
             <Badge type="productStatus" value="RFC 9116 COMPLIANT" size="sm" />
           </div>
           <a
             href="/.well-known/security.txt"
             target="_blank"
+            rel="noopener noreferrer"
             className="px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800 text-brand-cyan text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <FileText className="w-3.5 h-3.5" />
@@ -61,8 +82,8 @@ export default function SecurityDisclosurePage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider text-brand-cyan">
-            Safe Testing Expectations & Scope
+          <h3 className="text-sm font-bold uppercase tracking-wider text-brand-cyan">
+            Safe Testing Expectations &amp; Scope
           </h3>
           <ul className="list-disc pl-5 flex flex-col gap-1.5 text-gray-300">
             <li>Do NOT access, alter, or destroy user account data or organization vaults.</li>
@@ -75,25 +96,46 @@ export default function SecurityDisclosurePage() {
 
       {/* Vulnerability Reporting Form */}
       <GlassCard className="p-8 border-brand-cyan/40 flex flex-col gap-6">
-        <h3 className="text-base font-bold text-white uppercase tracking-wider text-brand-cyan flex items-center gap-2">
+        <h3 className="text-base font-bold uppercase tracking-wider text-brand-cyan flex items-center gap-2">
           <Send className="w-4 h-4" /> Submit Vulnerability Report
         </h3>
 
+        {submitError && (
+          <div role="alert" className="p-3.5 rounded-xl bg-red-950/70 border border-red-800 text-red-200 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{submitError}</span>
+          </div>
+        )}
+
         {submitted ? (
-          <div className="p-6 rounded-2xl bg-emerald-950/60 border border-emerald-800 text-emerald-200 text-xs flex flex-col gap-2">
+          <div role="status" className="p-6 rounded-2xl bg-emerald-950/60 border border-emerald-800 text-emerald-200 text-xs flex flex-col gap-2">
             <strong className="text-emerald-300 font-bold uppercase text-sm flex items-center gap-1.5">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Vulnerability Report Received
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Vulnerability Report Recorded
             </strong>
             <p>
-              Thank you for contributing to XTRACY&apos;s platform security. Our security team will review your submission and respond to <code className="text-white bg-darkBg p-1 rounded font-mono">{reporterEmail}</code> within 48 hours.
+              Submitted to <code className="text-white bg-darkBg p-1 rounded font-mono">/api/submissions</code>
+              {submissionId ? (
+                <>
+                  {' '}under tracking reference{' '}
+                  <code className="text-brand-cyan bg-darkBg p-1 rounded font-mono">{submissionId}</code>
+                </>
+              ) : null}
+              . Note: in serverless deployments without a connected database, submissions persist only in the active runtime intake queue; for critical vulnerabilities also contact{' '}
+              <a href="mailto:security@phantomxtrace.org" className="underline text-brand-cyan">
+                security@phantomxtrace.org
+              </a>
+              .
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmitReport} className="flex flex-col gap-4 text-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
-                <label className="font-bold text-gray-300">Researcher Email:</label>
+                <label htmlFor="sec-reporter-email" className="font-bold text-gray-300">
+                  Researcher Contact Email:
+                </label>
                 <input
+                  id="sec-reporter-email"
                   type="email"
                   value={reporterEmail}
                   onChange={(e) => setReporterEmail(e.target.value)}
@@ -104,8 +146,11 @@ export default function SecurityDisclosurePage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-bold text-gray-300">Target Component / Scope:</label>
+                <label htmlFor="sec-target-component" className="font-bold text-gray-300">
+                  Target Component / Scope:
+                </label>
                 <select
+                  id="sec-target-component"
                   value={targetComponent}
                   onChange={(e) => setTargetComponent(e.target.value)}
                   className="p-3 rounded-xl bg-darkBg-panel border border-gray-800 text-white text-xs font-bold"
@@ -119,8 +164,11 @@ export default function SecurityDisclosurePage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-gray-300">Vulnerability Summary:</label>
+              <label htmlFor="sec-vuln-summary" className="font-bold text-gray-300">
+                Vulnerability Summary:
+              </label>
               <input
+                id="sec-vuln-summary"
                 type="text"
                 value={vulnerabilitySummary}
                 onChange={(e) => setVulnerabilitySummary(e.target.value)}
@@ -131,8 +179,11 @@ export default function SecurityDisclosurePage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-gray-300">Steps to Reproduce & Technical Details:</label>
+              <label htmlFor="sec-repro-steps" className="font-bold text-gray-300">
+                Steps to Reproduce &amp; Technical Details:
+              </label>
               <textarea
+                id="sec-repro-steps"
                 value={stepsToReproduce}
                 onChange={(e) => setStepsToReproduce(e.target.value)}
                 placeholder="Provide step-by-step instructions or HTTP request samples..."
@@ -145,7 +196,7 @@ export default function SecurityDisclosurePage() {
             <button
               type="submit"
               disabled={submitting}
-              className="self-end px-8 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-electric text-white font-extrabold text-xs shadow-glowBlue hover:scale-105 transition-all flex items-center gap-2"
+              className="self-end px-8 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-electric text-white font-extrabold text-xs shadow-glowBlue hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-60"
             >
               <Bug className="w-4 h-4" />
               <span>{submitting ? 'Submitting Report...' : 'Submit Security Disclosure'}</span>

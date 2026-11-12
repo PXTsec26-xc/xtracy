@@ -66,6 +66,12 @@ const expectedAppPages = [
   '/tools/privacy-score',
   '/tools/incident-pathfinder',
   '/tools/simulator',
+  '/tools/digital-checkup',
+  '/tools/email-forensics',
+  '/tools/evidencepulse',
+  '/tools/scam-check',
+  '/tools/security-posture',
+  '/tools/verifier',
   '/assistant',
   '/case-vault',
   '/safe-vault',
@@ -90,6 +96,9 @@ const expectedAppPages = [
   '/alerts',
   '/community-feed',
   '/learning',
+  '/status',
+  '/accessibility',
+  '/verify/[report-id]',
   '/changelog',
   '/login',
   '/signup',
@@ -109,6 +118,7 @@ const expectedApiRoutes = [
   '/api/auth/me',
   '/api/auth/logout',
   '/api/auth/forgot-password',
+  '/api/auth/change-password',
   '/api/user/scans',
   '/api/user/vault',
   '/api/user/bookmarks',
@@ -129,6 +139,7 @@ const expectedApiRoutes = [
   '/api/tools/email-security',
   '/api/tools/file-inspector',
   '/api/tools/phishlens',
+  '/api/tools/link-dna',
   '/api/tools/scan',
   '/api/assistant',
   '/api/cves',
@@ -496,7 +507,7 @@ try {
   const combined = hashPassword(pwd);
   assert(verifyPassword(pwd, combined), 'Valid password verification failed');
   assert(!verifyPassword('WrongPassword!', combined), 'Invalid password should be rejected');
-  recordPass('Auth & Crypto', 'PBKDF2 SHA-256 Password Hashing & Verification (100,000 rounds)');
+  recordPass('Auth & Crypto', 'PBKDF2 SHA-256 Password Hashing & Verification (210,000 rounds)');
 } catch (err) {
   recordFail('Auth & Crypto', 'PBKDF2 Password Hashing', err);
 }
@@ -568,6 +579,52 @@ for (const q of allowedDefensiveQueries) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SECTION 6: PRIVACY & HARDCODED SECRET SCAN (src, public, scripts)
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n─── SECTION 6: Privacy & Hardcoded Secret Leak Audit ───');
+
+const sensitivePatterns = [
+  { label: 'Personal Gmail exposure', regex: new RegExp('@gm' + 'ail\\.com', 'i') },
+  { label: 'Vercel deployment ID prefix', regex: new RegExp('dpl' + '_[A-Za-z0-9]{12,}') },
+  { label: 'Vercel team ID prefix', regex: new RegExp('team' + '_[A-Za-z0-9]{12,}') },
+  { label: 'Google API key prefix', regex: new RegExp('AI' + 'za[0-9A-Za-z\\-_]{30,}') },
+  { label: 'AWS access key prefix', regex: new RegExp('AK' + 'IA[0-9A-Z]{16}') },
+  { label: 'GitHub PAT prefix', regex: new RegExp('gh' + 'p_[0-9A-Za-z]{20,}') },
+];
+
+function walkFiles(dir) {
+  const results = [];
+  if (!fs.existsSync(dir)) return results;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...walkFiles(full));
+    } else if (/\.(ts|tsx|js|mjs|json|css|md)$/i.test(entry.name)) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+try {
+  const scanRoots = ['src', 'public', 'scripts'].map((d) => path.join(process.cwd(), d));
+  const files = scanRoots.flatMap((root) => walkFiles(root));
+  const leaks = [];
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    for (const pat of sensitivePatterns) {
+      if (pat.regex.test(content)) {
+        leaks.push(`${path.relative(process.cwd(), file)} (${pat.label})`);
+      }
+    }
+  }
+  assert.strictEqual(leaks.length, 0, `Sensitive patterns found: ${leaks.join(', ')}`);
+  recordPass('Privacy & Secrets', `Scanned ${files.length} public/source/script files with 0 leaks`);
+} catch (err) {
+  recordFail('Privacy & Secrets', 'Source & asset leak audit', err);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FINAL VERIFICATION SUMMARY
 // ─────────────────────────────────────────────────────────────────────────────
 console.log('\n═══════════════════════════════════════════════════════════════════════');
@@ -583,5 +640,5 @@ if (failedTests > 0) {
   });
   process.exit(1);
 } else {
-  console.log('\n🎉 ALL 140+ COMPREHENSIVE PRODUCTION-READINESS TESTS PASSED WITH ZERO FAILURES!\n');
+  console.log(`\n🎉 ALL ${passedTests} PRODUCTION-READINESS CHECKS PASSED WITH ZERO FAILURES!\n`);
 }

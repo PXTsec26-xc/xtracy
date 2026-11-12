@@ -73,7 +73,7 @@ export default function HomePage() {
   };
 
   const metrics = [
-    { icon: Code, title: '18+ Security Tools', subtitle: 'Verified Diagnostic Engines' },
+    { icon: Code, title: '31 Security Tools', subtitle: 'Verified Diagnostic Engines' },
     { icon: Activity, title: 'Real-Time Analysis', subtitle: 'Deterministic Intelligence' },
     { icon: ShieldCheck, title: 'Zero-Log Privacy', subtitle: 'Client-Side Architecture' },
     { icon: Layers, title: 'High-Performance', subtitle: 'Graph & Data Engine' },
@@ -187,7 +187,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-1.5 p-2 rounded-lg bg-[#050d1a]/60 border border-sky-500/20">
                 <Lock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>Zero Data Storage</span>
+                <span>Minimal Retention</span>
               </div>
               <div className="flex items-center gap-1.5 p-2 rounded-lg bg-[#050d1a]/60 border border-sky-500/20">
                 <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
@@ -202,8 +202,13 @@ export default function HomePage() {
             {/* Interactive Investigation Input Bar */}
             <div className="w-full flex flex-col gap-2 pt-2">
               <form onSubmit={handleExecuteNexus} className="relative flex items-center w-full">
+                <label htmlFor="home-nexus-input" className="sr-only">
+                  Target URL, domain, IP address, file hash, email, or suspicious message
+                </label>
                 <input
+                  id="home-nexus-input"
                   type="text"
+                  aria-label="Target URL, domain, IP address, file hash, email, or suspicious message"
                   value={inputQuery}
                   onChange={(e) => handleInputChange(e.target.value)}
                   placeholder="Paste URL, domain, IP address, file hash, email, or suspicious lure text..."
@@ -422,16 +427,16 @@ export default function HomePage() {
             {/* Center Column: Formal Identity Lockup */}
             <div className="md:col-span-5 flex flex-col gap-1 text-center md:text-left">
               <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold">
-                FOUNDED &amp; CREATED BY
+                PROJECT ORIGIN
               </span>
               <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                ELLIOT PXT sec26
+                Elliot / PXT
               </h3>
               <span className="text-sm sm:text-base font-extrabold text-cyan-300 font-mono tracking-wider">
                 Founder of PhantomXTrace (PXT)
               </span>
               <span className="text-xs text-gray-400 font-semibold mt-0.5">
-                Creator &amp; Lead Architect of XTRACY
+                Platform Architect — XTRACY Defensive Suite
               </span>
             </div>
 

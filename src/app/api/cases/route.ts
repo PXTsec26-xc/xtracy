@@ -2,11 +2,15 @@ import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
 import { DbIncidentRecord } from '@/lib/server/models';
-
-const userCasesStore = new Map<string, DbIncidentRecord[]>();
+import { userCasesStore } from '@/lib/server/memoryStores';
+import { enforceRateLimit, extractBearerToken, parseBoundedJsonBody } from '@/lib/server/securityUtils';
+import crypto from 'node:crypto';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'cases-get', 60);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -20,15 +24,18 @@ export async function GET(req: NextRequest) {
   return createApiResponse({
     data: items,
     dataTrust: {
-      status: 'LIVE',
-      sourceName: 'XTRACY Incident Case Vault Repository',
+      status: 'LOCAL',
+      sourceName: 'XTRACY Ephemeral Session Case Vault Store',
       lastRefreshed: new Date().toISOString(),
     },
   });
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'cases-post', 40);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -38,44 +45,45 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  try {
-    const body = await req.json();
-    const { scenarioId, title, status, notes, checklistState } = body;
+  const { data: body, error } = await parseBoundedJsonBody<Record<string, any>>(req, 32768);
+  if (error) return error;
 
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      return createApiResponse({
-        error: { code: 'BAD_REQUEST', message: 'Case title is required.' },
-        status: 400,
-      });
-    }
+  const { scenarioId, title, status, notes, checklistState } = body || {};
 
-    const newCase: DbIncidentRecord = {
-      id: 'case-' + Date.now(),
-      userId: user.id,
-      scenarioId: scenarioId || 'custom-incident',
-      title: title.trim(),
-      status: status || 'IN_PROGRESS',
-      checklistState: checklistState || {},
-      notes: notes || '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      storageStatus: 'PERSISTENT',
-    };
-
-    const existing = userCasesStore.get(user.id) || [];
-    userCasesStore.set(user.id, [newCase, ...existing]);
-
-    return createApiResponse({ data: newCase });
-  } catch (err) {
+  if (!title || typeof title !== 'string' || title.trim().length === 0) {
     return createApiResponse({
-      error: { code: 'BAD_REQUEST', message: 'Invalid case payload.' },
+      error: { code: 'BAD_REQUEST', message: 'Case title is required.' },
       status: 400,
     });
   }
+
+  const validStatuses = ['IN_PROGRESS', 'RESOLVED', 'RECOVERING'] as const;
+  const resolvedStatus = validStatuses.includes(status) ? (status as DbIncidentRecord['status']) : 'IN_PROGRESS';
+
+  const newCase: DbIncidentRecord = {
+    id: 'case-' + crypto.randomBytes(6).toString('hex'),
+    userId: user.id,
+    scenarioId: typeof scenarioId === 'string' && scenarioId.trim() ? scenarioId.trim().slice(0, 80) : 'custom-incident',
+    title: title.trim().slice(0, 160),
+    status: resolvedStatus,
+    checklistState: checklistState && typeof checklistState === 'object' ? checklistState : {},
+    notes: typeof notes === 'string' ? notes.slice(0, 10000) : '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    storageStatus: 'SESSION_ONLY',
+  };
+
+  const existing = userCasesStore.get(user.id) || [];
+  userCasesStore.set(user.id, [newCase, ...existing].slice(0, 200));
+
+  return createApiResponse({ data: newCase });
 }
 
 export async function DELETE(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'cases-delete', 30);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {

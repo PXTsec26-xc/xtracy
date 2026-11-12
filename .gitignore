@@ -17,3 +17,14 @@ out/
 Thumbs.db
 .vercel
 .env*
+
+# Private founder / legal ownership records & external backups (keep out of public repo)
+XTRACY_FOUNDER_RECORDS/
+.private/
+*FOUNDER_DECLARATION*
+*IP_OWNERSHIP_RECORD*
+*TRADEMARK_PREPARATION*
+*COPYRIGHT_PREPARATION*
+*PERSONAL_METADATA*
+*.bundle
+tsconfig.tsbuildinfo

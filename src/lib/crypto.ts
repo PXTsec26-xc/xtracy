@@ -1,13 +1,20 @@
 /**
  * Client-Side Web Crypto API Helper for XTRACY Safe Vault
- * Uses AES-GCM 256-bit encryption with PBKDF2 key derivation from user passphrase.
- * 100% local in-browser encryption. Zero server transmission.
+ * Uses AES-GCM 256-bit authenticated encryption with PBKDF2-HMAC-SHA256 key derivation.
+ * Note: AES-GCM protects stored confidentiality and detects tampering against external
+ * modification of ciphertext, but local browser storage can still be cleared or inspected
+ * if the user's device or browser session itself is compromised.
  */
+
+export const DEFAULT_PBKDF2_ITERATIONS = 310000;
+export const LEGACY_PBKDF2_ITERATIONS = 100000;
 
 export interface WebCryptoPayload {
   ciphertextHex: string;
   ivHex: string;
   saltHex: string;
+  iterations?: number;
+  version?: number;
 }
 
 function getWebCrypto(): Crypto {
@@ -17,7 +24,11 @@ function getWebCrypto(): Crypto {
   return globalThis.crypto;
 }
 
-export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+export async function deriveKey(
+  passphrase: string,
+  salt: Uint8Array,
+  iterations: number = DEFAULT_PBKDF2_ITERATIONS
+): Promise<CryptoKey> {
   const webCrypto = getWebCrypto();
   const enc = new TextEncoder();
   const passphraseKey = await webCrypto.subtle.importKey(
@@ -34,7 +45,7 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
     {
       name: 'PBKDF2',
       salt: saltBuffer,
-      iterations: 100000,
+      iterations,
       hash: 'SHA-256',
     },
     passphraseKey,
@@ -44,7 +55,12 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
   );
 }
 
-export async function encryptText(data: string, key: CryptoKey, salt?: Uint8Array): Promise<WebCryptoPayload> {
+export async function encryptText(
+  data: string,
+  key: CryptoKey,
+  salt?: Uint8Array,
+  iterations: number = DEFAULT_PBKDF2_ITERATIONS
+): Promise<WebCryptoPayload> {
   const webCrypto = getWebCrypto();
   const enc = new TextEncoder();
   const saltBytes = salt || webCrypto.getRandomValues(new Uint8Array(16));
@@ -60,6 +76,8 @@ export async function encryptText(data: string, key: CryptoKey, salt?: Uint8Arra
     ciphertextHex: bufToHex(new Uint8Array(encryptedBuffer)),
     ivHex: bufToHex(iv),
     saltHex: bufToHex(saltBytes),
+    iterations,
+    version: 2,
   };
 }
 
@@ -81,14 +99,29 @@ export async function decryptText(payload: WebCryptoPayload, key: CryptoKey): Pr
 export async function encryptData(data: string, passphrase: string): Promise<WebCryptoPayload> {
   const webCrypto = getWebCrypto();
   const salt = webCrypto.getRandomValues(new Uint8Array(16));
-  const key = await deriveKey(passphrase, salt);
-  return encryptText(data, key, salt);
+  const key = await deriveKey(passphrase, salt, DEFAULT_PBKDF2_ITERATIONS);
+  return encryptText(data, key, salt, DEFAULT_PBKDF2_ITERATIONS);
 }
 
-export async function decryptData(ciphertextHex: string, ivHex: string, saltHex: string, passphrase: string): Promise<string> {
+export async function decryptData(
+  ciphertextHex: string,
+  ivHex: string,
+  saltHex: string,
+  passphrase: string,
+  iterations?: number
+): Promise<string> {
   const salt = hexToBuf(saltHex);
-  const key = await deriveKey(passphrase, salt);
-  return decryptText({ ciphertextHex, ivHex, saltHex }, key);
+  const primaryIters = iterations || DEFAULT_PBKDF2_ITERATIONS;
+  const key = await deriveKey(passphrase, salt, primaryIters);
+  try {
+    return await decryptText({ ciphertextHex, ivHex, saltHex }, key);
+  } catch (err) {
+    if (!iterations && primaryIters !== LEGACY_PBKDF2_ITERATIONS) {
+      const legacyKey = await deriveKey(passphrase, salt, LEGACY_PBKDF2_ITERATIONS);
+      return decryptText({ ciphertextHex, ivHex, saltHex }, legacyKey);
+    }
+    throw err;
+  }
 }
 
 function bufToHex(buffer: Uint8Array): string {

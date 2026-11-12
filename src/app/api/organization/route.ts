@@ -1,9 +1,13 @@
 import { NextRequest } from 'next/server';
 import { createApiResponse } from '@/lib/server/apiResponse';
 import { getUserBySessionToken } from '@/lib/server/authProvider';
+import { enforceRateLimit, extractBearerToken } from '@/lib/server/securityUtils';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '') || '';
+  const limited = enforceRateLimit(req, 'api-organization', 40);
+  if (limited) return limited;
+
+  const token = extractBearerToken(req);
   const user = await getUserBySessionToken(token);
 
   if (!user) {
@@ -13,24 +17,25 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const sampleOrg = {
-    id: 'org-demo-123',
-    name: 'CyberShield Security Team',
+  const demoOrg = {
+    id: 'org-demo-preview',
+    name: 'Organization Workspace Preview',
     role: 'ADMIN',
-    membersCount: 4,
+    membersCount: 2,
     members: [
       { id: 'm1', name: user.fullName || 'User', email: user.email, role: 'ADMIN' },
-      { id: 'm2', name: 'Security Analyst', email: 'analyst@cybershield.org', role: 'ANALYST' },
+      { id: 'm2', name: 'Sample Analyst Seat', email: 'analyst.example@invalid', role: 'ANALYST' },
     ],
-    casesCount: 2,
+    casesCount: 0,
     isolatedTenantId: `tenant-${user.id.substring(0, 8)}`,
+    isDemoWorkspace: true,
   };
 
   return createApiResponse({
-    data: sampleOrg,
+    data: demoOrg,
     dataTrust: {
-      status: 'LIVE',
-      sourceName: 'XTRACY Organization Mode Architecture',
+      status: 'DEMO',
+      sourceName: 'XTRACY Organization Mode Preview',
       lastRefreshed: new Date().toISOString(),
     },
   });

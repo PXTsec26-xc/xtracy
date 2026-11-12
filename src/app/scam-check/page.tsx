@@ -4,7 +4,10 @@ import React, { useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { FeatureStatusBadge } from '@/components/ui/FeatureStatusBadge';
-import { ScamCheckAcceptedResult, ScamCheckRejectedResult, SCAM_CHECK_DISCLAIMER, AnalysisPipelineStatus } from '@/lib/server/scamCheck';
+import type { ScamCheckAcceptedResult, ScamCheckRejectedResult, AnalysisPipelineStatus } from '@/lib/server/scamCheck';
+
+const SCAM_CHECK_DISCLAIMER =
+  'XTRACY Security Analysis provides deterministic diagnostic indicators and risk scoring for defensive decision support. It does not replace independent security audits or court-certified forensic analysis.';
 import { ReportModal } from '@/components/reports/ReportModal';
 import {
   ShieldAlert,
